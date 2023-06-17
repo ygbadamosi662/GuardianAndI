@@ -13,10 +13,11 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-user = getenv("HBNB_MYSQL_USER")
-password = getenv("HBNB_MYSQL_PWD")
-host = getenv("HBNB_MYSQL_HOST")
-db = getenv("HBNB_MYSQL_DB")
+user = getenv("GI_DEV")
+password = getenv("GI_DEV_PWD")
+host = getenv("GI_DEV_HOST")
+db = getenv("GI_DEV_DB")
+
 
 class DBStorage:
     """Represents a database storage engine.
@@ -33,6 +34,8 @@ class DBStorage:
         self.__engine = create_engine("mysql+mysqldb://{}:{}@{}/{}".
                                       format(user, password, host, db),
                                       pool_pre_ping=True)
+        if getenv("GI_DEV_ENV") == "test":
+            Base.metadata.drop_all(self.__engine)
 
     def all(self, cls=None):
         """Query on the curret database session all objects of the given class.
