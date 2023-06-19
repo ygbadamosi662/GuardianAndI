@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 """Defines the PickAndDrop class."""
-from models.base import Base
-from sqlalchemy import Column, Enum, DateTime, Integer, ForeignKey
-from sqlalchemy.sql import func
+from models.base_model import Base, BaseModel
+from sqlalchemy import Column, Enum, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class PickAndDrop(Base):
+class PickAndDrop(Base, BaseModel):
     """Represents a pick and drops for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table pick_and_drops.
     Attributes:
@@ -33,7 +32,7 @@ class PickAndDrop(Base):
     school_id = Column(Integer, ForeignKey('school_id'))
     guardian_id = Column(Integer, ForeignKey('guardian_id'))
     action = Column(Enum('PICK-UP', 'DROP-OFF'))
-    created_on = Column(DateTime, default=func.now())
+    
 
     student = relationship("Student", back_populates="pick_and_drop")
     school = relationship("School", back_populates="pick_and_drop")

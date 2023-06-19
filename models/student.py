@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """Defines the Student class."""
-from base import Base
-
+from models.base_model import Base, BaseModel
 from sqlalchemy import Column, Enum, Date
 from sqlalchemy import String
 from sqlalchemy import Integer
@@ -9,7 +8,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class Student(Base):
+class Student(Base, BaseModel):
     """Represents a student for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table students.
     Attributes:

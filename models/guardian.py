@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Defines the Guardian class."""
-from models.base import Base
+from models.base_model import Base, BaseModel
 from sqlalchemy import Column, Enum, Date
 from sqlalchemy import String
 from sqlalchemy import Integer
@@ -8,7 +8,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class Guardian(Base):
+class Guardian(Base, BaseModel):
     """Represents a guardian for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table guardians.
     Attributes:

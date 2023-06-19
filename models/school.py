@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 """Defines the School class."""
-from models.base import Base
+from models.base_model import Base, BaseModel
 from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 
 
-class School(Base):
+class School(Base, BaseModel):
     """Represents a school for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table schools.
     Attributes:
