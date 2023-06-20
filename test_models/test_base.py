@@ -7,12 +7,12 @@
 from datetime import datetime
 import time
 import inspect
-import models
+import base_model
 import pycodestyle
 import unittest
 
-BaseModel = models.base_model.BaseModel
-module_doc = models.base_model.__doc__
+BaseModel = base_model.BaseModel
+module_doc = base_model.__doc__
 
 
 class TestBaseModelDocs(unittest.TestCase):
