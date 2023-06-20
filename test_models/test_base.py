@@ -11,7 +11,7 @@ import models
 import pycodestyle
 import unittest
 
-BaseModel = models.base.BaseModel
+BaseModel = models.base_model.BaseModel
 module_doc = models.base.__doc__
 
 
