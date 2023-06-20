@@ -12,7 +12,7 @@ import pycodestyle
 import unittest
 
 BaseModel = models.base_model.BaseModel
-module_doc = models.base.__doc__
+module_doc = models.base_model.__doc__
 
 
 class TestBaseModelDocs(unittest.TestCase):
