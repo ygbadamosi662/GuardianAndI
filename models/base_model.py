@@ -46,7 +46,7 @@ class BaseModel:
 
     def save(self):
         """Update the time the changes were made."""
-        self.updated_at = datetime.now
+        self.updated_at = datetime.utcnow
 
     def to_dict(self):
         """Return a dictionary representation of the BaseModel instance.
