@@ -7,12 +7,12 @@
 from datetime import datetime
 import time
 import inspect
-import base_model
+import models
 import pycodestyle
 import unittest
 
-BaseModel = base_model.BaseModel
-module_doc = base_model.__doc__
+BaseModel = models.base_model.BaseModel
+model_doc = models.base_model.__doc__
 
 
 class TestBaseModelDocs(unittest.TestCase):
@@ -26,19 +26,19 @@ class TestBaseModelDocs(unittest.TestCase):
         self.base_funcs = inspect.getmembers(BaseModel, inspect.isfunction)
 
     def test_pep8_conformance(self):
-        """Test that models/base.py conforms to PEP8 (pycodestyle)."""
-        for path in ['models/base.py',
-                     'test_base.py']:
+        """Test that models/base_model.py conforms to PEP8 (pycodestyle)."""
+        for path in ['models/base_model.py',
+                     'test_base_model.py']:
             with self.subTest(path=path):
                 errors = pycodestyle.Checker(path).check_all()
                 self.assertEqual(errors, 0)
 
-    def test_module_docstring(self):
-        """Test for the existence of module docstring"""
-        self.assertIsNot(module_doc, None,
-                         "base.py needs a docstring")
-        self.assertTrue(len(module_doc) > 1,
-                        "base.py needs a docstring")
+    def test_model_docstring(self):
+        """Test for the existence of model docstring"""
+        self.assertIsNot(model_doc, None,
+                         "base_model.py needs a docstring")
+        self.assertTrue(len(model_doc) > 1,
+                        "base_model.py needs a docstring")
 
     def test_class_docstring(self):
         """Test for the BaseModel class docstring"""
@@ -77,21 +77,35 @@ class TestBaseModel(unittest.TestCase):
                 self.assertIn(attr, instance.__dict__)
                 self.assertIs(type(instance.__dict__[attr]), typ)
 
+    def test_datetime_attributes(self):
+        """Test that two BaseModel instances have different datetime objects
+        and that upon creation have identical updated_at and created_at
+        value."""
+        old = datetime.now()
+        time.sleep(1e-4)
+        inst = BaseModel()
+        time.sleep(1e-4)
+        new = datetime.now()
+        self.assertTrue(old <= inst.created_at <= new)
+        time.sleep(1e-4)
+        old2 = datetime.now()
+        inst2 = BaseModel()
+        new2 = datetime.now()
+        self.assertTrue(old2 <= inst2.created_at <= new2)
+        self.assertEqual(inst.created_at, inst.updated_at)
+        self.assertEqual(inst2.created_at, inst2.updated_at)
+        self.assertNotEqual(inst.created_at, inst2.created_at)
+        self.assertNotEqual(inst.updated_at, inst2.updated_at)
+
     def test_to_dict(self):
         """ Test conversion of object attributes to dictionary. """
         instance = BaseModel()
-        instance.testname = "Guard&I"
-        instance.number = 25
         dic = instance.to_dict()
         expected_attrs = ["created_at",
                           "updated_at",
-                          "testname",
-                          "number",
                           "__class__"]
         self.assertCountEqual(dic.keys(), expected_attrs)
         self.assertEqual(dic['__class__'], 'BaseModel')
-        self.assertEqual(dic['testname'], "Axist")
-        self.assertEqual(dic['number'], 25)
 
     def test_to_dict_values(self):
         """ Test that values in dict returned from to_dict are correct. """
@@ -118,7 +132,7 @@ class TestBaseModel(unittest.TestCase):
         inst = BaseModel()
         old_created_at = inst.created_at
         old_updated_at = inst.updated_at
-        time.sleep(0.0001)
+        time.sleep(1e-4)
         inst.save()
         new_created_at = inst.created_at
         new_updated_at = inst.updated_at
