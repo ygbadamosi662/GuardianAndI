@@ -28,16 +28,26 @@ class BaseModel:
             *args (any): Unused.
             **kwargs (dict): Key/value pairs of attributes.
         """
-
-        self.created_at = self.updated_at = datetime.utcnow()
         if kwargs:
             for key, value in kwargs.items():
                 if key == "created_at" or key == "updated_at":
                     value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+                    setattr(self, key, value)
                 if key != "__class__":
                     setattr(self, key, value)
-
+        else:
+            self.created_at = self.updated_at = datetime.utcnow()
     
+    def __str__(self):
+        """Return the print/str representation of the BaseModel instance."""
+        d = self.__dict__.copy()
+        d.pop("_sa_instance_state", None)
+        return "[{}] ({}) {}".format(type(self).__name__, self.id, d)
+
+    def save(self):
+        """Update the time the changes were made."""
+        self.updated_at = datetime.now
+
     def to_dict(self):
         """Return a dictionary representation of the BaseModel instance.
         Includes the key/value pair __class__ representing
@@ -48,10 +58,6 @@ class BaseModel:
         my_dict["created_at"] = self.created_at.isoformat()
         my_dict["updated_at"] = self.updated_at.isoformat()
         my_dict.pop("_sa_instance_state", None)
+        if "password" in my_dict:
+            del my_dict["password"]
         return my_dict
-
-    def __str__(self):
-        """Return the print/str representation of the BaseModel instance."""
-        d = self.__dict__.copy()
-        d.pop("_sa_instance_state", None)
-        return "[{}] ({}) {}".format(type(self).__name__, self.id, d)
