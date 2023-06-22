@@ -37,3 +37,7 @@ class PickAndDrop(Base, BaseModel):
     student = relationship("Student", back_populates="pick_and_drop")
     school = relationship("School", back_populates="pick_and_drop")
     guardian = relationship("Guardian", back_populates="pick_and_drop")
+
+    def __init__(self):
+        """initialize the pick_and_drop"""
+        super.__init__()
