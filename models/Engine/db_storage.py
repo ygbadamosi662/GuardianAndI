@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv()
+load_dotenv('name-of-env-file')
 
 user = getenv("GI_DEV")
 password = getenv("GI_DEV_PWD")
@@ -66,6 +66,7 @@ class DBStorage:
         """Delete obj from the current database session."""
         if obj is not None:
             self.__session.delete(obj)
+            self.__session.commit()
 
     def reload(self):
         """Create all tables in the database and initialize a new session."""
