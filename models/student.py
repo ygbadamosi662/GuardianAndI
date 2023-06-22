@@ -36,3 +36,7 @@ class Student(Base, BaseModel):
     pick_and_drop = relationship("PickAndDrop", uselist=False, back_populates="student")
     school = relationship("School", back_populates="students", cascade="delete")
     guardians = relationship("Guardian", back_populates="student", cascade="delete")
+
+    def __init__(self):
+        """ Initializes pupil """
+        super().__init__()
