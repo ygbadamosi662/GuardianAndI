@@ -4,7 +4,8 @@ from models.base_model import Base, BaseModel
 from sqlalchemy import Column, Enum, Date
 from sqlalchemy import String
 from sqlalchemy import Integer
-from sqlalchemy import ForeignKey
+# from sqlalchemy import ForeignKey
+from hashlib import md5
 from sqlalchemy.orm import relationship
 
 
@@ -34,7 +35,17 @@ class Guardian(Base, BaseModel):
     gender = Column(Enum('MALE', 'FEMALE'))
     tag = Column(Enum('SUPER-GUARDIAN', 'AUXILLARY-GUARDIAN'))
     dob = Column(Date)
-    student_id = Column(Integer, ForeignKey('student_id'))
-    
+    # student_id = Column(Integer, ForeignKey('student_id'))
+
     pick_and_drop = relationship("PickAndDrop", uselist=False, back_populates="guardian")
     student = relationship("Student", back_populates="guardians", cascade="delete")
+
+    def __init__(self):
+        """Initialize parent"""
+        super.__init__()
+
+    def __setattr__(self, name, value):
+        """sets a password with md5 encryption"""
+        if name == "password":
+            value = md5(value.encode()).hexdigest()
+        super().__setattr__(name, value)
