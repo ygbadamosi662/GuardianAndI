@@ -5,7 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
-
+from hashlib import md5
 
 class School(Base, BaseModel):
     """Represents a school for a MySQL database.
@@ -32,4 +32,13 @@ class School(Base, BaseModel):
 
     students = relationship("Student", back_populates="school", cascade="delete")
     pick_and_drop = relationship("PickAndDrop", uselist=False, back_populates="school")
-    
+
+    def __init__(self):
+        """Initialize school"""
+        super.__init__()
+
+    def __setattr__(self, name, value):
+        """sets a password with md5 encryption"""
+        if name == "password":
+            value = md5(value.encode()).hexdigest()
+        super().__setattr__(name, value)
