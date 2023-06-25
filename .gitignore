@@ -1,2 +1,3 @@
 gi_dev_sql.env
+setup_mysql.sql
 __pycache__
