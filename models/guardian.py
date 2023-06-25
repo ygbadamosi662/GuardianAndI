@@ -4,12 +4,11 @@ from models.base_model import Base, BaseModel
 from sqlalchemy import Column, Enum, Date
 from sqlalchemy import String
 from sqlalchemy import Integer
-# from sqlalchemy import ForeignKey
 from hashlib import md5
 from sqlalchemy.orm import relationship
 
 
-class Guardian(Base, BaseModel):
+class Guardian(BaseModel, Base):
     """Represents a guardian for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table guardians.
     Attributes:
@@ -23,7 +22,7 @@ class Guardian(Base, BaseModel):
         gender: (sqlalchemy Enum): The guardian's gender
         student_id: (sqlalchemy Integer): guardian's student
         student: (sqlalchemy relationship): The Guardian-Student relationship.
-        
+
     """
     __tablename__ = "guardians"
 
@@ -35,14 +34,14 @@ class Guardian(Base, BaseModel):
     gender = Column(Enum('MALE', 'FEMALE'))
     tag = Column(Enum('SUPER-GUARDIAN', 'AUXILLARY-GUARDIAN'))
     dob = Column(Date)
-    # student_id = Column(Integer, ForeignKey('student_id'))
 
-    pick_and_drop = relationship("PickAndDrop", uselist=False, back_populates="guardian")
-    student = relationship("Student", back_populates="guardians", cascade="delete")
+    pick_and_drop = relationship("PickAndDrop", uselist=False,
+                                 backref="guardian")
+    students = relationship("Student", backref="guardian", cascade="delete")
 
-    def __init__(self):
-        """Initialize parent"""
-        super.__init__()
+    def __init__(self, *args, **kwargs):
+        """Initialize guardian"""
+        super().__init__(*args, **kwargs)
 
     def __setattr__(self, name, value):
         """sets a password with md5 encryption"""
