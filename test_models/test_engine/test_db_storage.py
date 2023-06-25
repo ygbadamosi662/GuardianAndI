@@ -102,9 +102,10 @@ class TestDBStorage(unittest.TestCase):
         objs_old = storage.all(School)
         # delete
         storage.delete(instance)
-        #after delete
+        # after delete
         objs_new = storage.all(School)
         self.assertNotEqual(len(objs_old), len(objs_new))
+
 
 if __name__ == "__main__":
     unittest.main()
