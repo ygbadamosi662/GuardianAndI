@@ -9,7 +9,7 @@ import models
 import pycodestyle
 import unittest
 
-BaseModel = models.basemodel.BaseModel
+BaseModel = models.base_model.BaseModel
 School = models.school.School
 school_doc = models.school.__doc__
 
@@ -86,16 +86,16 @@ class TestSchool(unittest.TestCase):
     def test_password_attr(self):
         """Test School has attr password, and it's encrypt"""
         sch = School()
-        sch.password = 'Wardproof123#'
+        sch.password = 'Guardian123#'
         self.assertTrue(hasattr(sch, "password"))
-        self.assertEqual(sch.password, None)
+        self.assertNotEqual(sch.password, 'Guardian123#')
 
     def test_name_attr(self):
         """Test School has attr name, and it's None"""
         sch = School()
         self.assertTrue(hasattr(sch, "name"))
         self.assertEqual(sch.name, None)
-        
+
     def test_address_attr(self):
         """Test School has attr address, and it's None"""
         sch = School()
@@ -115,7 +115,7 @@ class TestSchool(unittest.TestCase):
         self.assertEqual(type(new_dic), dict)
         self.assertFalse("_sa_instance_state" in new_dic)
         for attr in sch.__dict__:
-            if attr is not "_sa_instance_state":
+            if attr != "_sa_instance_state":
                 self.assertTrue(attr in new_dic)
         self.assertTrue("__class__" in new_dic)
 
@@ -133,8 +133,11 @@ class TestSchool(unittest.TestCase):
     def test_str(self):
         """test that the str method has the correct output"""
         sch = School()
-        string = "[School] ({}) {}".format(sch.id, sch.__dict__)
+        d = sch.__dict__.copy()
+        d.pop("_sa_instance_state", None)
+        string = "[School] ({}) {}".format(sch.id, d)
         self.assertEqual(string, str(sch))
+
 
 if __name__ == '__main__':
     unittest.main()

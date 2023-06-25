@@ -88,7 +88,7 @@ class TestStudent(unittest.TestCase):
         std = Student()
         self.assertTrue(hasattr(std, "first_name"))
         self.assertEqual(std.first_name, None)
-        
+
     def test_last_name_attr(self):
         """Test Student has attr last_name, and it's None"""
         std = Student()
@@ -120,7 +120,7 @@ class TestStudent(unittest.TestCase):
         self.assertEqual(type(new_dic), dict)
         self.assertFalse("_sa_instance_state" in new_dic)
         for attr in std.__dict__:
-            if attr is not "_sa_instance_state":
+            if attr != "_sa_instance_state":
                 self.assertTrue(attr in new_dic)
         self.assertTrue("__class__" in new_dic)
 
@@ -138,8 +138,11 @@ class TestStudent(unittest.TestCase):
     def test_str(self):
         """test that the str method has the correct output"""
         std = Student()
-        string = "[Student] ({}) {}".format(std.id, std.__dict__)
+        d = std.__dict__.copy()
+        d.pop("_sa_instance_state", None)
+        string = "[Student] ({}) {}".format(std.id, d)
         self.assertEqual(string, str(std))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -77,12 +77,6 @@ class TestGuardian(unittest.TestCase):
         self.assertTrue(hasattr(gua, "id"))
         self.assertEqual(gua.id, None)
 
-    # def test_student_id_attr(self):
-    #     """Test Student has attr school_id, and it's None"""
-    #     gua = Guardian()
-    #     self.assertTrue(hasattr(gua, "student_id"))
-    #     self.assertEqual(gua.student_id, None)
-
     def test_email_attr(self):
         """Test Guardian has attr email, and it's None"""
         gua = Guardian()
@@ -92,16 +86,16 @@ class TestGuardian(unittest.TestCase):
     def test_password_attr(self):
         """Test Guardian has attr password, and it's encrypted"""
         gua = Guardian()
-        gua.password = "Wardproof123#"
+        gua.password = "Guardian123#"
         self.assertTrue(hasattr(gua, "password"))
-        self.assertNotEqual(gua.password, "Wardproof123#")
+        self.assertNotEqual(gua.password, "Guardian123#")
 
     def test_first_name_attr(self):
         """Test Guardian has attr first_name, and it's None"""
         gua = Guardian()
         self.assertTrue(hasattr(gua, "first_name"))
         self.assertEqual(gua.first_name, None)
-        
+
     def test_last_name_attr(self):
         """Test Guardian has attr last_name, and it's None"""
         gua = Guardian()
@@ -133,7 +127,7 @@ class TestGuardian(unittest.TestCase):
         self.assertEqual(type(new_dic), dict)
         self.assertFalse("_sa_instance_state" in new_dic)
         for attr in gua.__dict__:
-            if attr is not "_sa_instance_state":
+            if attr != "_sa_instance_state":
                 self.assertTrue(attr in new_dic)
         self.assertTrue("__class__" in new_dic)
 
@@ -151,8 +145,11 @@ class TestGuardian(unittest.TestCase):
     def test_str(self):
         """test that the str method has the correct output"""
         gua = Guardian()
-        string = "[Guardian] ({}) {}".format(gua.id, gua.__dict__)
+        d = gua.__dict__.copy()
+        d.pop("_sa_instance_state", None)
+        string = "[Guardian] ({}) {}".format(gua.id, d)
         self.assertEqual(string, str(gua))
+
 
 if __name__ == '__main__':
     unittest.main()

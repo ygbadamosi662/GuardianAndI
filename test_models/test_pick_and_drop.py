@@ -102,7 +102,7 @@ class TestPickAndDrop(unittest.TestCase):
         self.assertEqual(type(new_dic), dict)
         self.assertFalse("_sa_instance_state" in new_dic)
         for attr in pd.__dict__:
-            if attr is not "_sa_instance_state":
+            if attr != "_sa_instance_state":
                 self.assertTrue(attr in new_dic)
         self.assertTrue("__class__" in new_dic)
 
@@ -120,8 +120,11 @@ class TestPickAndDrop(unittest.TestCase):
     def test_str(self):
         """test that the str method has the correct output"""
         pd = PickAndDrop()
-        string = "[PickAndDrop] ({}) {}".format(pd.id, pd.__dict__)
+        d = pd.__dict__.copy()
+        d.pop("_sa_instance_state", None)
+        string = "[PickAndDrop] ({}) {}".format(pd.id, d)
         self.assertEqual(string, str(pd))
+
 
 if __name__ == '__main__':
     unittest.main()
