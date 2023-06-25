@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Defines the DBStorage engine."""
 from os import getenv
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from models.base_model import Base
 from models.student import Student
 from models.school import School
@@ -11,7 +11,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv('name-of-env-file')
+path = find_dotenv('gi_dev_sql.env')
+load_dotenv(path)
 
 user = getenv("GI_DEV")
 password = getenv("GI_DEV_PWD")
@@ -31,7 +32,7 @@ class DBStorage:
 
     def __init__(self):
         """Initialize a new DBStorage instance."""
-        self.__engine = create_engine("mysql+mysqldb://{}:{}@{}/{}".
+        self.__engine = create_engine("mysql+mysqlconnector://{}:{}@{}/{}".
                                       format(user, password, host, db),
                                       pool_pre_ping=True)
         if getenv("GI_DEV_ENV") == "test":
