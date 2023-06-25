@@ -6,7 +6,7 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import String
 
-
+time = "%Y-%m-%dT%H:%M:%S.%f"
 Base = declarative_base()
 
 
@@ -31,13 +31,14 @@ class BaseModel:
         if kwargs:
             for key, value in kwargs.items():
                 if key == "created_at" or key == "updated_at":
-                    value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+                    value = datetime.strptime(value, time)
                     setattr(self, key, value)
                 if key != "__class__":
                     setattr(self, key, value)
         else:
-            self.created_at = self.updated_at = datetime.utcnow()
-    
+            self.created_at = datetime.utcnow()
+            self.updated_at = datetime.utcnow()
+
     def __str__(self):
         """Return the print/str representation of the BaseModel instance."""
         d = self.__dict__.copy()
@@ -55,8 +56,10 @@ class BaseModel:
         """
         my_dict = self.__dict__.copy()
         my_dict["__class__"] = str(type(self).__name__)
-        my_dict["created_at"] = self.created_at.isoformat()
-        my_dict["updated_at"] = self.updated_at.isoformat()
+        if "created_at" in my_dict:
+            my_dict["created_at"] = my_dict["created_at"].strftime(time)
+        if "updated_at" in my_dict:
+            my_dict["updated_at"] = my_dict["updated_at"].strftime(time)
         my_dict.pop("_sa_instance_state", None)
         if "password" in my_dict:
             del my_dict["password"]
