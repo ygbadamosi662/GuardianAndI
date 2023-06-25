@@ -8,7 +8,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class Student(Base, BaseModel):
+class Student(BaseModel, Base):
     """Represents a student for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table students.
     Attributes:
@@ -21,7 +21,6 @@ class Student(Base, BaseModel):
         gender: (sqlalchemy Enum): The student's gender.
         school_id: (sqlalchemy Integer): student's schools
         school: (sqlalchemy relationship): The Student-School relationship.
-        
     """
     __tablename__ = "students"
 
@@ -31,12 +30,12 @@ class Student(Base, BaseModel):
     grade = Column(String(128), nullable=False)
     dob = Column(Date)
     gender = Column(Enum('MALE', 'FEMALE'))
-    school_id = Column(Integer, ForeignKey('school_id'))
+    school_id = Column(Integer, ForeignKey('schools.id'))
+    guardian_id = Column(Integer, ForeignKey('guardians.id'))
 
-    pick_and_drop = relationship("PickAndDrop", uselist=False, back_populates="student")
-    school = relationship("School", back_populates="students", cascade="delete")
-    guardians = relationship("Guardian", back_populates="student", cascade="delete")
+    pick_and_drop = relationship("PickAndDrop", uselist=False,
+                                 backref="student")
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """ Initializes pupil """
-        super().__init__()
+        super().__init__(*args, **kwargs)
