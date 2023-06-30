@@ -27,14 +27,15 @@ class Student(BaseModel, Base):
     id = Column(Integer, primary_key=True)
     first_name = Column(String(128), nullable=False)
     last_name = Column(String(128))
+    email = Column(String(128), nullable=False, unique=True)
     grade = Column(String(128), nullable=False)
     dob = Column(Date)
     gender = Column(Enum('MALE', 'FEMALE'))
     school_id = Column(Integer, ForeignKey('schools.id'))
-    guardian_id = Column(Integer, ForeignKey('guardians.id'))
 
-    pick_and_drop = relationship("PickAndDrop", uselist=False,
-                                 backref="student")
+    school_relation = relationship("School", back_populates="students_list")
+    pick_and_drops_student = relationship("PickAndDrop", back_populates='pick_and_drop_student')
+    guard_student = relationship("Guard", back_populates="guards_student")
 
     def __init__(self, *args, **kwargs):
         """ Initializes pupil """

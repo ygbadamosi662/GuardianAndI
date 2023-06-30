@@ -6,11 +6,7 @@ from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from global_bcrypt import globalBcrypt
-# from my_flask import bcrypt
-# from hashlib import md5
-
-
-
+from models.student import Student
 
 
 class School(BaseModel, Base):
@@ -27,6 +23,7 @@ class School(BaseModel, Base):
         students (sqlalchemy relationship): The School-Student relationship.
     """
     __tablename__ = "schools"
+    
 
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
@@ -35,9 +32,8 @@ class School(BaseModel, Base):
     address = Column(String(128))
     city = Column(String(128))
 
-    students = relationship("Student", backref="school", cascade="delete")
-    pick_and_drop = relationship("PickAndDrop", uselist=False,
-                                 backref="school")
+    students_list = relationship("Student", back_populates="school_relation")
+    pick_and_drops_school = relationship("PickAndDrop", back_populates="pick_and_drop_school")
 
     def __init__(self, *args, **kwargs):
         """Initialize school"""

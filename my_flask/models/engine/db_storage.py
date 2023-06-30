@@ -7,6 +7,7 @@ from models.student import Student
 from models.school import School
 from models.guardian import Guardian
 from models.pick_and_drop import PickAndDrop
+from models.guard import Guard
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -49,6 +50,7 @@ class DBStorage:
             objs.extend(self.__session.query(School).all())
             objs.extend(self.__session.query(Guardian).all())
             objs.extend(self.__session.query(PickAndDrop).all())
+            objs.extend(self.__session.query(Guard).all())
         else:
             if type(cls) == str:
                 cls = eval(cls)
@@ -77,6 +79,19 @@ class DBStorage:
         Session = scoped_session(session_factory)
         self.__session = Session()
 
+    def deleteAll(self):
+        """drops all table, commit and close the session."""
+        self.reload()
+        Base.metadata.drop_all(self.__engine)
+        self.get_session()
+        self.save()
+        self.close()
+        return True  
+
     def close(self):
         """Close the working SQLAlchemy session."""
         self.__session.close()
+
+    def get_session(self):
+        """Get the current session."""
+        return self.__session

@@ -32,19 +32,17 @@ class Guardian(BaseModel, Base):
     email = Column(String(128), nullable=False, unique=True)
     password = Column(String(128), nullable=False)
     gender = Column(Enum('MALE', 'FEMALE'))
-    tag = Column(Enum('SUPER-GUARDIAN', 'AUXILLARY-GUARDIAN'))
     dob = Column(Date)
 
-    pick_and_drop = relationship("PickAndDrop", uselist=False,
-                                 backref="guardian")
-    students = relationship("Student", backref="guardian", cascade="delete")
+    pick_and_drops_guardian = relationship("PickAndDrop", back_populates="pick_and_drop_guardian")
+    guardian_guard = relationship("Guard", back_populates="guards_guardian")
 
     def __init__(self, *args, **kwargs):
         """Initialize guardian"""
         super().__init__(*args, **kwargs)
 
     def __setattr__(self, name, value):
-        """sets a password with md5 encryption"""
+        """sets a password with bcrypt encryption"""
         if name == "password":
             value = globalBcrypt.hashpw(value.encode('utf-8'), globalBcrypt.gensalt())
         super().__setattr__(name, value)

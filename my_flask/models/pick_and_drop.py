@@ -24,6 +24,10 @@ class PickAndDrop(BaseModel, Base):
     guardian_id = Column(Integer, ForeignKey('guardians.id'))
     action = Column(Enum('PICK-UP', 'DROP-OFF'))
 
+    pick_and_drop_guardian = relationship("Guardian", back_populates="pick_and_drops_guardian")
+    pick_and_drop_school = relationship("School", back_populates="pick_and_drops_school")
+    pick_and_drop_student = relationship("Student", back_populates="pick_and_drops_student")
+
     def __init__(self, *args, **kwargs):
         """initialize the pick_and_drop"""
         super().__init__(*args, **kwargs)
