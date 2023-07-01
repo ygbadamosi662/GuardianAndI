@@ -1,23 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Blueprint, request, jsonify
 from flask_marshmallow import Marshmallow
 from marshmallow import fields, Schema, ValidationError, validate
 from models import storage
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
-from enum import Enum
-import bcrypt
 
-app = Flask(__name__)
-ma = Marshmallow(app)
 
-class Gender(Enum):
-    MALE = 'MALE'
-    FEMALE = 'FEMALE'
+reg_bp = Blueprint('reg', __name__)
+ma = Marshmallow(reg_bp)
 
-class Tag(Enum):
-    SUPER_GUARDIAN = 'SUPER_GUARDIAN'
-    AUXILLARY_GUARDIAN = 'AUXILLARY_GUARDIAN'
 
 class SchoolSchema(Schema):
     name = fields.String(required=True)
@@ -50,15 +42,15 @@ class StudentSchema(Schema):
 student_schema = StudentSchema()
     
 
-@app.route('/home')
+@reg_bp.route('/home')
 def home():
-    session = storage.get_session()
+    # session = storage.get_session()
     # storage.deleteAll()
-    session.query(Student).delete()
-    session.commit()
+    # session.query(Student).delete()
+    # session.commit()
     return jsonify("welcome home")
 
-@app.route('/reg/school', methods=['POST'])
+@reg_bp.route('/reg/school', methods=['POST'])
 def schoolReg():
     try:
         data = request.get_json()
@@ -76,7 +68,7 @@ def schoolReg():
     except ValidationError as err:
         return {'errors': err.messages}, 400
     
-@app.route('/reg/guardian', methods=['POST'])
+@reg_bp.route('/reg/guardian', methods=['POST'])
 def guardianReg():  
     try:
         data = request.get_json()
@@ -93,7 +85,7 @@ def guardianReg():
         return {'errors': err.messages}, 400
     
 
-@app.route('/reg/student', methods=['POST'])
+@reg_bp.route('/reg/student', methods=['POST'])
 def studentReg():  
     try:
         data = request.get_json()
@@ -103,7 +95,7 @@ def studentReg():
         school = session.query(School).filter_by(email=studentData['schoolEmail']).first()
 
         if not school:
-            return "CCant find school, school is not registered on our platform", 400
+            return "Cant find school, school is not registered on our platform", 400
 
         student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
 
@@ -116,7 +108,3 @@ def studentReg():
         return jsonify(studentData), 200
     except ValidationError as err:
         return {'errors': err.messages}, 400
-
-
-if __name__ == '__main__':
-    app.run()

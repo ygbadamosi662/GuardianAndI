@@ -4,7 +4,7 @@ from models.base_model import Base, BaseModel
 from sqlalchemy import Column, Enum, Date
 from sqlalchemy import String
 from sqlalchemy import Integer
-from global_bcrypt import globalBcrypt
+from global_variables import globalBcrypt
 from sqlalchemy.orm import relationship
 
 
@@ -45,4 +45,4 @@ class Guardian(BaseModel, Base):
         """sets a password with bcrypt encryption"""
         if name == "password":
             value = globalBcrypt.hashpw(value.encode('utf-8'), globalBcrypt.gensalt())
-        super().__setattr__(name, value)
+        super().__setattr__(name, value)       

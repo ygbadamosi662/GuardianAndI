@@ -5,7 +5,7 @@ from sqlalchemy import Column
 from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
-from global_bcrypt import globalBcrypt
+from global_variables import globalBcrypt
 from models.student import Student
 
 

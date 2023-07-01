@@ -4,7 +4,7 @@
     Initializes bcrypt
 """
 
-import bcrypt 
+import bcrypt
 
 
 globalBcrypt = bcrypt
