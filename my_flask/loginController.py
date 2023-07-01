@@ -4,7 +4,7 @@ from flask_jwt_extended import create_access_token
 from models.school import School
 from models.guardian import Guardian
 from models import storage
-from global_variables import globalBcrypt
+from global_variables import globalBcrypt, GUARDIAN, SCHOOL
 
 
 login_bp = Blueprint('login', __name__)
@@ -40,6 +40,7 @@ def loginSchool():
         return jsonify({'message': 'Invalid Credentials'}), 400
     
     jwtPayload['email'] = loginData['email']
+    jwtPayload['model'] = SCHOOL
     
     jwt = create_access_token(identity=jwtPayload)
 
@@ -67,6 +68,7 @@ def loginGuardian():
         return jsonify({'message': 'Invalid Credentials'}), 400
     
     jwtPayload['email'] = loginData['email']
+    jwtPayload['model'] = GUARDIAN
     
     jwt = create_access_token(identity=jwtPayload)
 

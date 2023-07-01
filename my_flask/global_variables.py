@@ -8,3 +8,7 @@ import bcrypt
 
 
 globalBcrypt = bcrypt
+
+# INSTANCES
+GUARDIAN = 'GUARDIAN'
+SCHOOL = 'SCHOOL'

@@ -1,10 +1,13 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from flask_marshmallow import Marshmallow
 from marshmallow import fields, Schema, ValidationError, validate
 from models import storage
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
+from utility import util
+from global_variables import SCHOOL
 
 
 reg_bp = Blueprint('reg', __name__)
@@ -37,18 +40,9 @@ class StudentSchema(Schema):
     gender = fields.String(required=True, validate=validate.OneOf(["MALE", "FEMALE"]))
     grade = fields.String(required=True)
     dob = fields.Date("iso")
-    schoolEmail = fields.String(required=True)
-
+    
 student_schema = StudentSchema()
     
-
-@reg_bp.route('/home')
-def home():
-    # session = storage.get_session()
-    # storage.deleteAll()
-    # session.query(Student).delete()
-    # session.commit()
-    return jsonify("welcome home")
 
 @reg_bp.route('/reg/school', methods=['POST'])
 def schoolReg():
@@ -86,16 +80,17 @@ def guardianReg():
     
 
 @reg_bp.route('/reg/student', methods=['POST'])
-def studentReg():  
+@jwt_required()
+def studentReg():
     try:
         data = request.get_json()
         studentData = student_schema.load(data)
+        
+        jwt_token = request.headers.get('Authorization')[7:]
+        school = util.getInstanceFromJwt(SCHOOL, jwt_token)
 
-        session = storage.get_session()
-        school = session.query(School).filter_by(email=studentData['schoolEmail']).first()
-
-        if not school:
-            return "Cant find school, school is not registered on our platform", 400
+        if school == False:
+            return jsonify({'message': 'Invalid Credentials'}), 400
 
         student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
 
