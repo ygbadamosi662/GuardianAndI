@@ -12,7 +12,7 @@ class Utility():
     def __init__(self):
         self.session = storage.get_session()
 
-    def getInstanceFromJwt(self,instance, jwtToken):
+    def getInstanceFromJwt(self, instance):
         # decoded = decode_token(jwtToken)
         payload = get_jwt_identity()
 
@@ -33,5 +33,7 @@ class Utility():
                 return school
             
         return None
+    
+
     
 util = Utility()  

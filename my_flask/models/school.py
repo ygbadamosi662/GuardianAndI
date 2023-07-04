@@ -1,15 +1,16 @@
 #!/usr/bin/python3
 """Defines the School class."""
-from models.base_model import Base, BaseModel
-from sqlalchemy import Column
-from sqlalchemy import String
+from models.base_model import BaseModel
+# from typing import List
+from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from global_variables import globalBcrypt
-from models.student import Student
+from models.userBase import User
 
 
-class School(BaseModel, Base):
+
+class School(BaseModel, User):
     """Represents a school for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table schools.
     Attributes:
@@ -23,17 +24,40 @@ class School(BaseModel, Base):
         students (sqlalchemy relationship): The School-Student relationship.
     """
     __tablename__ = "schools"
-    
+    id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, name="school_id")
+    school_name: Mapped[str] = mapped_column(String(128))
+    grade: Mapped[str] = mapped_column(String(128))
+    email: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(128))
+    address: Mapped[str] = mapped_column(String(128))
+    city: Mapped[str] = mapped_column(String(128))
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(128))
-    email = Column(String(128), nullable=False, unique=True)
-    password = Column(String(128), nullable=False)
-    address = Column(String(128))
-    city = Column(String(128))
+    school_students = relationship("Student", back_populates="student_school")
+    school_registries = relationship("Registry", back_populates="registry_school")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "school",
+    }
+    # id = Column(Integer, primary_key=True, name='school_id')
+    # user_id = Column(Integer, ForeignKey('users.id'))
+    # school_name = Column(String(128))
+    # email = Column(String(128), nullable=False, unique=True)
+    # password = Column(String(128), nullable=False)
+    # address = Column(String(128))
+    # city = Column(String(128))
 
     students_list = relationship("Student", back_populates="school_relation")
-    pick_and_drops_school = relationship("PickAndDrop", back_populates="pick_and_drop_school")
+    school_registries = relationship(
+        "Registry", 
+        back_populates="registry_school", 
+        foreign_keys=[Column(Integer, ForeignKey("schools.school_id"))],
+        )
+    # pick_and_drops_school = relationship("PickAndDrop", back_populates="pick_and_drop_school")
+    
+    __mapper_args__ = {
+        "polymorphic_identity": "school",
+    }
+
 
     def __init__(self, *args, **kwargs):
         """Initialize school"""

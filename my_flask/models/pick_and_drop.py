@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 """Defines the PickAndDrop class."""
-from models.base_model import Base, BaseModel
+from models.base_model import BaseModel
+from models.subjectBase import Subject
 from sqlalchemy import Column, Enum, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from Enums import action_enum, auth_enum
 
 
-class PickAndDrop(BaseModel, Base):
+class PickAndDrop(BaseModel, Subject):
     """Represents a pick and drops for a MySQL database.
     Inherits from SQLAlchemy Base and links to the MySQL table
     pick_and_drops.
@@ -17,16 +19,30 @@ class PickAndDrop(BaseModel, Base):
         guardian_id: (sqlalchemy Integer): pick_and_drop's guardian
     """
     __tablename__ = "pick_and_drops"
+    id: Mapped[int] = mapped_column(ForeignKey("subjects.id"), primary_key=True, name="pick_and_drop_id")
+    action: Mapped[action_enum.Action]
+    auth: Mapped[auth_enum.Auth]
+    PAD_guard_id: Mapped[int] = mapped_column(ForeignKey("guards.guard_id"))
+    PAD_guard = relationship("Guard", back_populates="guard_PADs")
 
-    id = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey('students.id'))
-    school_id = Column(Integer, ForeignKey('schools.id'))
-    guardian_id = Column(Integer, ForeignKey('guardians.id'))
-    action = Column(Enum('PICK-UP', 'DROP-OFF'))
+    PAD_registry_id: Mapped[int] = mapped_column(ForeignKey("registries.registry_id"))
+    PAD_registry = relationship("Registry", back_populates="registry_PADs")
 
-    pick_and_drop_guardian = relationship("Guardian", back_populates="pick_and_drops_guardian")
-    pick_and_drop_school = relationship("School", back_populates="pick_and_drops_school")
-    pick_and_drop_student = relationship("Student", back_populates="pick_and_drops_student")
+    __mapper_args__ = {
+        "polymorphic_identity": "pick_and_drop",
+    }
+
+    # id = Column(Integer, primary_key=True, name='pick_and_drop_id')
+    # subject_id = Column(Integer, ForeignKey('subjects.id'))
+    # registry_id = Column(Integer, ForeignKey('registries.registry_id'))
+    # guard_id = Column(Integer, ForeignKey('guards.id'))
+    # action = Column(Enum(action_enum.Action))
+    # auth = Column(Enum(auth_enum.Auth))
+
+    # pick_and_drop_registry = relationship("School", back_populates="registry_pick_and_drops")
+    # pick_and_drop_guard = relationship("Guard", back_populates="pick_and_drops_guard")
+
+    # polymorphic_identity = 'pick_and_drop'
 
     def __init__(self, *args, **kwargs):
         """initialize the pick_and_drop"""

@@ -8,6 +8,8 @@ from models.school import School
 from models.guardian import Guardian
 from models.pick_and_drop import PickAndDrop
 from models.guard import Guard
+from models.notification import Notification
+from models.registry import Registry
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -40,7 +42,7 @@ class DBStorage:
             Base.metadata.drop_all(self.__engine)
 
     def all(self, cls=None):
-        """Query on the curret database session all objects of the given class.
+        """Query on the current database session all objects of the given class.
         If cls is None, queries all types of objects.
         Return:
             Dict of queried classes in the format <class name>.<obj id> = obj.
@@ -51,6 +53,8 @@ class DBStorage:
             objs.extend(self.__session.query(Guardian).all())
             objs.extend(self.__session.query(PickAndDrop).all())
             objs.extend(self.__session.query(Guard).all())
+            objs.extend(self.__session.query(Notification).all())
+            objs.extend(self.__session.query(Registry).all())
         else:
             if type(cls) == str:
                 cls = eval(cls)

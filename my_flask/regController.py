@@ -1,21 +1,22 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from flask_marshmallow import Marshmallow
-from marshmallow import fields, Schema, ValidationError, validate
+from marshmallow import fields, Schema, ValidationError
 from models import storage
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
+# from models.notification import Notification
 from utility import util
 from global_variables import SCHOOL
+from Enums import gender_enum
 
 
 reg_bp = Blueprint('reg', __name__)
-ma = Marshmallow(reg_bp)
+# ma = Marshmallow(reg_bp)
 
 
 class SchoolSchema(Schema):
-    name = fields.String(required=True)
+    school_name = fields.String(required=True)
     email = fields.Email(required=True)
     password = fields.String(required=True)
     address = fields.String(required=True)
@@ -28,7 +29,7 @@ class GuardianSchema(Schema):
     last_name = fields.String(required=True)
     email = fields.Email(required=True)
     password = fields.String(required=True)
-    gender = fields.String(required=True, validate=validate.OneOf(["MALE", "FEMALE"]))
+    gender = fields.Enum(gender_enum.Gender)
     dob = fields.Date("iso")
 
 guardian_schema = GuardianSchema()
@@ -37,7 +38,7 @@ class StudentSchema(Schema):
     first_name = fields.String(required=True)
     last_name = fields.String(required=True)
     email = fields.Email(required=True)
-    gender = fields.String(required=True, validate=validate.OneOf(["MALE", "FEMALE"]))
+    gender = fields.Enum(gender_enum.Gender)
     grade = fields.String(required=True)
     dob = fields.Date("iso")
     
@@ -50,7 +51,7 @@ def schoolReg():
         data = request.get_json()
         schoolData = school_schema.load(data)
 
-        school = School(name=schoolData['name'], email=schoolData['email'], 
+        school = School(name=schoolData['school_name'], email=schoolData['email'], 
                         password=schoolData['password'], address=schoolData['address'], 
                         city=schoolData['city'])
         
@@ -87,7 +88,7 @@ def studentReg():
         studentData = student_schema.load(data)
         
         jwt_token = request.headers.get('Authorization')[7:]
-        school = util.getInstanceFromJwt(SCHOOL, jwt_token)
+        school = util.getInstanceFromJwt(SCHOOL)
 
         if school == False:
             return jsonify({'message': 'Invalid Credentials'}), 400
