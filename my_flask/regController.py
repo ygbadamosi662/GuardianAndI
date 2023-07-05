@@ -5,8 +5,8 @@ from models import storage
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
-from models.guard import Guard
 from models.registry import Registry
+from models.guard import Guard
 # from models.notification import Notification
 from utility import util
 from global_variables import SCHOOL, GUARDIAN

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, current_app
 from regController import reg_bp
 from loginController import login_bp
 from studentController import student_bp
@@ -12,7 +12,9 @@ from models import storage
 app = Flask(__name__)
 app.config.from_object(Config)
 
-jtw_manager = JWTManager(app)
+
+
+jwt_manager = JWTManager(app)
 ma = Marshmallow(app)
 
 path_prefix = '/api/v1'
@@ -20,6 +22,10 @@ path_prefix = '/api/v1'
 app.register_blueprint(reg_bp, url_prefix=path_prefix)
 app.register_blueprint(login_bp, url_prefix=path_prefix)
 app.register_blueprint(student_bp, url_prefix=path_prefix)
+
+with app.app_context():
+    secret = current_app.config.get('JWT_SECRET_KEY')
+    print(secret)
 
 @app.route('/')
 def home():

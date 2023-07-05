@@ -30,4 +30,4 @@ class SchoolRepo:
             schools = self.session.query(School).all()
             return schools
         except SQLAlchemyError:
-            return
+            return    

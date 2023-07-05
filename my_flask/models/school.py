@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 """Defines the School class."""
-from models.base_model import BaseModel, Base
-# from typing import List
-from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy import Integer
+from models.base_model import BaseModel
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from global_variables import globalBcrypt
 from models.userBase import User
