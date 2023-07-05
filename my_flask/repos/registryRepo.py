@@ -12,3 +12,26 @@ class RegistryRepo:
 
     def __init__(self):
         self.session = storage.get_session()
+
+    def findByStudent(self, student):
+        if student:
+            try:
+                registry = self.session.query(Registry).filter_by(registry_student=student).first()
+                return registry
+            except SQLAlchemyError:
+                return
+            
+    def findBySchool(self, school):
+        if school:
+            try:
+                registry = self.session.query(Registry).filter_by(registry_school=school).first()
+                return registry
+            except SQLAlchemyError:
+                return
+
+    def findAll(self):
+        try:
+            registries = self.session.query(Registry).all()
+            return registries
+        except SQLAlchemyError:
+            return    

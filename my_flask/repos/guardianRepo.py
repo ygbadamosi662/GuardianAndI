@@ -5,6 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class GuardianRepo:
+    """
+    Defines a repository for Guardian model
+    provides methods for querying its table in the db
+    """
 
     session = None
 
@@ -19,9 +23,9 @@ class GuardianRepo:
             except SQLAlchemyError:
                 return
 
-    def findAllGuardian(self):
+    def findAll(self):
         try:
-            guardian = self.session.query(Guardian).all()
-            return guardian
+            guardians = self.session.query(Guardian).all()
+            return guardians
         except SQLAlchemyError:
             return

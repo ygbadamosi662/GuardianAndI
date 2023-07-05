@@ -18,19 +18,12 @@ class Subject(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
 
-    note_subjects = relationship("Notification", back_populates="note_subject")
-    # type: Mapped[str]
+    subjects = relationship("Notification", back_populates="subject")
 
     __mapper_args__ = {
         "polymorphic_identity": "subject",
         "polymorphic_on": "name",
     }
-    # id = Column(Integer, primary_key=True)
-    # name = Column(String(255))
-
-    # subjects = relationship("Notification", back_populates="subject", foreign_keys="[Notification.subject_id]")
-
-    # polymorphic_identity = 'subject'
 
     def __init__(self, name):
         self.name = name

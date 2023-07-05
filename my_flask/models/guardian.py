@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Defines the Guardian class."""
-from models.base_model import BaseModel
+from models.base_model import BaseModel, Base
 from models.userBase import User
 from sqlalchemy import ForeignKey, Date
 from sqlalchemy import String
@@ -28,13 +28,16 @@ class Guardian(BaseModel, User):
     """
     __tablename__ = "guardians"
     id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, name="guardian_id")
+    # id: Mapped[int] = mapped_column(primary_key=True, name="guardian_id")
     first_name: Mapped[str] = mapped_column(String(128))
     last_name: Mapped[str] = mapped_column(String(128))
     email: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(128), nullable=False)
     gender: Mapped[gender_enum.Gender]
     dob = mapped_column(Date)
+
     guardian_guards = relationship("Guard", back_populates="guard_guardian")
+    auths_provided = relationship("PickAndDrop", back_populates="auth_provider")
     
     __mapper_args__ = {
         "polymorphic_identity": "guardian",
@@ -50,9 +53,9 @@ class Guardian(BaseModel, User):
     # dob = Column(Date)
 
     # pick_and_drops_guardian = relationship("PickAndDrop", back_populates="pick_and_drop_guardian")
-    guardian_guard = relationship("Guard", back_populates="guards_guardian")
+    # guardian_guard = relationship("Guard", back_populates="guards_guardian")
 
-    polymorphic_identity = 'guardian'
+    # polymorphic_identity = 'guardian'
 
     def __init__(self, *args, **kwargs):
         """Initialize guardian"""

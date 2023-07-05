@@ -1,38 +1,44 @@
 """Defines the Utility class"""
 from models import storage
 from flask_jwt_extended import get_jwt_identity
-from models.guardian import Guardian
-from models.school import School
+from repos.guardianRepo import GuardianRepo, Guardian
+from repos.schoolRepo import SchoolRepo, School
 from global_variables import GUARDIAN, SCHOOL
 
 class Utility():
+    """
+    Defines Utility class, just for utility functions
+    """
     
     session = None
+    guardianRepo = GuardianRepo()
+    schoolRepo = SchoolRepo()
 
     def __init__(self):
         self.session = storage.get_session()
 
-    def getInstanceFromJwt(self, instance):
+    def getInstanceFromJwt(self):
         # decoded = decode_token(jwtToken)
         payload = get_jwt_identity()
 
-        if instance == GUARDIAN:
-            guardian = self.session.query(Guardian).filter_by(email=payload['email']).first()
+        if payload['model'] == GUARDIAN:
+            guardian = self.guardianRepo.findByEmail(payload['email'])
 
             if guardian:
                 return guardian
             
-        if instance == SCHOOL:
-            if payload['model'] != SCHOOL:
-                return False 
-            
-            school = self.session.query(School).filter_by(email=payload['email']).first()
+        if payload['model'] == SCHOOL:
+            school = self.schoolRepo.findByEmail(payload['email'])
                
-
             if school:
                 return school
             
         return None
+    
+    def persistModel(self, model):
+        storage.new(model)
+        storage.save()
+
     
 
     

@@ -1,10 +1,10 @@
-"""Defines Guardian Enum"""
+"""Defines Tag Enum"""
 from Enums import Enum
 
 
-class Guardian(Enum):
+class Tag(Enum):
     """ 
-    represents Guardian enum
+    represents Tag enum
     extends Enum from python enum
 
     Attributes:\n

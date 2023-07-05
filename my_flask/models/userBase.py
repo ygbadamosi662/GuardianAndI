@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Defines the User class."""
 from models.base_model import Base
+from models.notification import Notification
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
@@ -18,22 +19,14 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
 
-    sender_notes = relationship("Notification", back_populates="note_sender", foreign_keys="User.id")
-    receiver_notes = relationship("Notification", back_populates="note_receiver", foreign_keys="User.id")
+    sender_notes = relationship("Notification", backref="note_sender", primaryjoin=id==Notification.sender_id)
+    receiver_notes = relationship("Notification", backref="note_receiver", primaryjoin=id==Notification.receiver_id)
     # type: Mapped[str]
 
     __mapper_args__ = {
         "polymorphic_identity": "user",
         "polymorphic_on": "name",
     }
-    # id = Column(Integer, primary_key=True)
-    # name = Column(String(255))
-
-    # sender_notes = relationship("Notification", back_populates="sender", foreign_keys="[Notification.sender_id]")
-    # receiver_notes = relationship("Notification", back_populates="receiver", foreign_keys="[Notification.receiver_id]")
-
-
-    # polymorphic_identity = 'user'
 
     def __init__(self, name):
         self.name = name

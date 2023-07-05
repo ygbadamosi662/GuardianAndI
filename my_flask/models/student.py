@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Defines the Student class."""
-from models.base_model import BaseModel
+from models.base_model import BaseModel, Base
 from typing import List
 from models.subjectBase import Subject
 from sqlalchemy import Column, Enum, Date
@@ -27,39 +27,24 @@ class Student(BaseModel, Subject):
     """
     __tablename__ = "students"
     id: Mapped[int] = mapped_column(ForeignKey("subjects.id"), primary_key=True, name="student_id")
+    # id: Mapped[int] = mapped_column(primary_key=True, name="student_id")
     first_name: Mapped[str] = mapped_column(String(128))
     last_name: Mapped[str] = mapped_column(String(128))
     grade: Mapped[str] = mapped_column(String(128))
     email: Mapped[str] = mapped_column(String(128) , nullable=False, unique=True)
     gender: Mapped[gender_enum.Gender]
     dob = mapped_column(Date)
-    school_id: Mapped[int] = mapped_column(ForeignKey("schools.school_id"))
+
+    school_id: Mapped[int] = mapped_column(ForeignKey("schools.school_id"), nullable=True)
     student_school = relationship("School", back_populates="school_students")
 
-    stuedent_guards = relationship("Guard", back_populates="guard_student")
-    student_registries = relationship("Registry", back_populates="registry_student", foreign_keys="Student.id")
+    student_guards = relationship("Guard", back_populates="guard_student", foreign_keys=id)
+    
+    student_registries = relationship("Registry", back_populates="registry_student", foreign_keys=id)
 
     __mapper_args__ = {
         "polymorphic_identity": "student",
     }
-    # id = Column(Integer, primary_key=True, name='student_id')
-    # subject_id = Column(Integer, ForeignKey('subjects.id'))
-    # first_name = Column(String(128), nullable=False)
-    # last_name = Column(String(128), nullable=False)
-    # email = Column(String(128), nullable=False, unique=True)
-    # grade = Column(String(128), nullable=False)
-    # dob = Column(Date)
-    # gender = Column(Enum(gender_enum.Gender))
-    # school_id = Column(Integer, ForeignKey('schools.school_id'))
-
-    # school_relation = relationship("School", back_populates="students_list")
-    # student_registries = relationship(
-    #     "Registry", 
-    #     back_populates="registry_student", 
-    #     foreign_keys=[Column(Integer, ForeignKey("students.student_id"))],
-    #     )
-    # guard_student = relationship("Guard", back_populates="guards_student")
-    
 
     __mapper_args__ = {
         "polymorphic_identity": "student",
