@@ -13,17 +13,17 @@ class GuardRepo:
     def __init__(self):
         self.session = storage.get_session()
 
-    def findByGuards_guardian(self, guardian: Guardian ):
+    def findByGuardian(self, guardian: Guardian ):
         if guardian:
             try:
-                guard = self.session.query(Guard).filter_by(guards_guardian=guardian).first()
+                guard = self.session.query(Guard).filter_by(guards_guardian=guardian).all()
                 return guard
             except SQLAlchemyError:
                 return
 
-    def findByGuards_student(self, student: Student):
+    def findByStudent(self, student: Student):
         try:
-            guard = self.session.query(Guard).filter_by(guards_student=student).first()
+            guard = self.session.query(Guard).filter_by(guard_student=student).all()
             return guard
         except SQLAlchemyError:
             return

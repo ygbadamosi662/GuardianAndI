@@ -1,6 +1,7 @@
 """Defines schemas using marshmallow for our request and response dtos"""
 from marshmallow import fields, Schema
 from Enums.gender_enum import Gender
+from Enums.tag_enum import Tag
 
 
 class SchoolSchema(Schema):
@@ -31,3 +32,10 @@ class StudentSchema(Schema):
     dob = fields.Date("iso")
     
 student_schema = StudentSchema()
+
+class LinkStudent(Schema):
+    guardian_email = fields.Email(required=True)
+    student_email = fields.Email(required=True)
+    tag = fields.Enum(Tag)
+
+link_schema = LinkStudent()

@@ -2,11 +2,13 @@
 from models.student import Student
 from models.school import School
 from models.guardian import Guardian
+from models.guard import Guard
+from models import storage
 from global_variables import SCHOOL, GUARDIAN, STUDENT
 
 def getSchoolResponse(school: School) -> dict:
     schoolObj = {}
-    schoolObj['name'] = school.name
+    schoolObj['name'] = school.school_name
     schoolObj['email'] = school.email
     schoolObj['address'] = school.address
     schoolObj['city'] = school.city
@@ -28,9 +30,21 @@ def getStudentResponse(student: Student) -> dict:
     studentObj['gender'] = student.gender.value
     studentObj['grade'] = student.grade
     studentObj['dob'] = student.dob
-    studentObj['school'] = getSchoolResponse(student.student_school)
+    session = storage.get_session()
+    school = session.get(Student, student.id).student_school
+    if school:
+        studentObj['school'] = getSchoolResponse()
 
     return studentObj
+
+def getGuardResponse(guard: Guard) -> dict:
+    guardObj = {}
+    guardObj['student'] = getStudentResponse(guard.guard_student)
+    guardObj['guardian'] = getGuardianResponse(guard.guard_guardian)
+    guardObj['tag'] = guard.tag.value
+    guardObj['status'] = guard.status.value
+
+    return guardObj
 
 def getListOfResponseObjects(modelType, models) -> list:
     objList = []
