@@ -127,7 +127,7 @@ def studentReg():
                 guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
                 util.persistModel(guard)
             else:
-                return {'message': 'Guardian {} does not exist in our world'.format(studentData['user email'])}, 400
+                return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
         
         if payload['model'] == GUARDIAN:
             studentData = student_schema.load(data)

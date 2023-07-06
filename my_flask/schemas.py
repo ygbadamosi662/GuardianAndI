@@ -39,3 +39,9 @@ class LinkStudent(Schema):
     tag = fields.Enum(Tag)
 
 link_schema = LinkStudent()
+
+class UpdateSchool(Schema):
+    school_email = fields.Email(required=True)
+    student_email = fields.Email(required=True)
+
+update_schema = UpdateSchool()

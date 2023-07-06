@@ -58,13 +58,10 @@ class Utility():
         """
         guards = self.guardRepo.findByStudent(student)
         returnee = False
-        print('function called')
-        print(guards)
+        
         if guards:
-            print('guards present')
             for guard in guards:
                 if guard.guard_guardian == guardian:
-                    print('is a guardian')
                     returnee = True
                     if andIsSuper:
                         if guard.tag != Tag.SUPER_GUARDIAN:
@@ -88,6 +85,15 @@ class Utility():
 
         return limit < 2
     
+    def ifStudent(self, student: Student, school: School) -> bool:
+        session = storage.get_session()
+        school_ish = session.get(School, school.id)
+        
+        if school_ish.school_students:
+            for stud in school_ish.school_students:
+                if stud == student:
+                    
+                    return True
+        return False
 
-    
 util = Utility()  
