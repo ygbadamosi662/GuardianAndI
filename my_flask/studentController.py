@@ -73,7 +73,9 @@ def linkStudent():
         if not new_guardian:
             return {'message': 'guardian does not exist'}, 400
         
-        
+        # check if new_guardian is already a guardian to the provided student
+        if util.isGuardian(student, new_guardian) == True:
+            return {'message': linkData['guardian_email']+' is already a guardian to '+linkData['student_email']}, 400
         
         guard = Guard(guard_student=student, guard_guardian=new_guardian, tag=linkData['tag'], status=Status.ACTIVE_PENDING)
         util.persistModel(guard)
@@ -82,12 +84,6 @@ def linkStudent():
 
         return jsonify(getGuardResponse(guard))
     
-        # guard = guard_repo.findByGuards_guardian(util.getInstanceFromJwt())
-        # if guard.tag != Tag.SUPER_GUARDIAN:
-        #    return {'message': 'Invalid Credentials'}, 400
-    
-        # if guard.status != Status.ACTIVE:
-        #     return {'message': 'Invalid Credentials'}, 400
     except ValidationError as err:
         return {'message': err.messages}, 400
     except SQLAlchemyError as err:

@@ -33,7 +33,7 @@ def getStudentResponse(student: Student) -> dict:
     session = storage.get_session()
     school = session.get(Student, student.id).student_school
     if school:
-        studentObj['school'] = getSchoolResponse()
+        studentObj['school'] = getSchoolResponse(school)
 
     return studentObj
 
