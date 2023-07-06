@@ -11,6 +11,8 @@ from models.guard import Guard
 from utility import util
 from global_variables import SCHOOL, GUARDIAN
 from repos.studentRepo import StudentRepo
+from repos.guardianRepo import GuardianRepo
+from repos.schoolRepo import SchoolRepo
 from Enums.gender_enum import Gender
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
@@ -39,6 +41,10 @@ class GuardianSchema(Schema):
 
 guardian_schema = GuardianSchema()
 
+def validate_length(value, school):
+    if value != school:
+        raise ValidationError("Invalid credential")
+
 class StudentSchema(Schema):
     first_name = fields.String(required=True)
     last_name = fields.String(required=True)
@@ -46,10 +52,15 @@ class StudentSchema(Schema):
     gender = fields.Enum(Gender)
     grade = fields.String(required=True)
     dob = fields.Date("iso")
+    user_email = fields.Email(required=True)
     
 student_schema = StudentSchema()
 
+
 student_repo = StudentRepo()
+school_repo = SchoolRepo()
+guardian_repo = GuardianRepo()
+
     
 
 @reg_bp.route('/reg/school', methods=['POST'])
@@ -92,31 +103,55 @@ def guardianReg():
 def studentReg():
     try:
         data = request.get_json()
-        studentData = student_schema.load(data)
-        
-        # jwt_token = request.headers.get('Authorization')[7:]
         payload = get_jwt_identity()
 
-        student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
-
         if payload['model'] == SCHOOL:
+            studentData = student_schema.load(data)
+
+            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
             school = util.getInstanceFromJwt()
+            guardian = guardian_repo.findByEmail(studentData['user_email'])
+            
+            if school:
+                student.student_school = school
+                util.persistModel(student)
+                student = student_repo.findByEmail(studentData['email'])
+
+                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
+                util.persistModel(registry)
+            else:    
+                return {'message': 'something is wrong, school not set'}, 400
+
+            # check if guardian exists
+            if guardian:
+                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
+                util.persistModel(guard)
+            else:
+                return {'message': 'Guardian {} does not exist in our world'.format(studentData['user email'])}, 400
+        
+        if payload['model'] == GUARDIAN:
+            studentData = student_schema.load(data)
+
+            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
+
+            # check if school exists
+            school = school_repo.findByEmail(studentData['user_email'])
             if school:
                 student.student_school = school
                 util.persistModel(student)
 
-                registry = Registry(registry_student=student_repo.findByEmail(studentData['email']), registry_school=school, status=Status.ACTIVE)
+                student = student_repo.findByEmail(studentData['email'])
+                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
                 util.persistModel(registry)
-            else:    
-                return {'message': 'something is wrong, school not set'}, 400
-        
-        if payload['model'] == GUARDIAN:
+            else:
+                return {'message': 'School {} does not exist in our world'.format(studentData['user_email'])}, 400
+            
             guardian = util.getInstanceFromJwt()
             if guardian:
                 util.persistModel(student)
-                studentSaved = student_repo.findByEmail(studentData['email'])
+                student = student_repo.findByEmail(studentData['email'])
 
-                guard = Guard(guard_student=studentSaved, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
+                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
                 util.persistModel(guard)
             else:
                 return {'message': 'something is wrong, guardian not set'}, 400    

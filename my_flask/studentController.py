@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from marshmallow import fields, Schema, ValidationError
+from marshmallow import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from utility import util
 from models import storage
