@@ -4,6 +4,7 @@ from flask_jwt_extended import get_jwt_identity
 from repos.guardianRepo import GuardianRepo, Guardian
 from repos.schoolRepo import SchoolRepo, School
 from repos.guardRepo import GuardRepo, Guard
+from repos.registryRepo import RegistryRepo, Registry
 from models.student import Student
 from global_variables import GUARDIAN, SCHOOL
 from Enums.tag_enum import Tag
@@ -95,5 +96,13 @@ class Utility():
                     
                     return True
         return False
+
+    def validateRegistry(self, registry: Registry) -> bool:
+        if registry:
+            return registry.status == Status.ACTIVE
+        
+    def validateGuard(self, guard: Guard) -> bool:
+        if guard:
+            return guard.status == Status.ACTIVE    
 
 util = Utility()  

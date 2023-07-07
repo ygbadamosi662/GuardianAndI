@@ -10,7 +10,7 @@ from repos.guardRepo import GuardRepo, Guard
 from repos.guardianRepo import GuardianRepo
 from repos.schoolRepo import SchoolRepo, School
 from repos.registryRepo import RegistryRepo, Registry
-from global_variables import SCHOOL, STUDENT, GUARDIAN
+from global_variables import SCHOOL, STUDENT, GUARDIAN, GUARD
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 from schemas import link_schema, update_schema
@@ -24,7 +24,7 @@ school_repo = SchoolRepo()
 registry_repo = RegistryRepo()
 
 
-@student_bp.route('/student/student', methods=['GET'])
+@student_bp.route('/student/get/student', methods=['GET'])
 @jwt_required(optional=False)
 def getStudent():
     email = request.args.get('email')
@@ -34,9 +34,7 @@ def getStudent():
     
     return {'error_message': 'Cant find student'}, 400
 
-
-
-@student_bp.route('/student/students', methods=['GET'])
+@student_bp.route('/student/get/students', methods=['GET'])
 @jwt_required(optional=False)
 def getStudents():
     payload = get_jwt_identity()
@@ -184,3 +182,44 @@ def removeSchool(email):
     
 
     return jsonify(getRegistryResponse(registry)), 200
+
+@student_bp.route('/student/get/guardian/<email>/<status>', methods=['GET'])
+@jwt_required(optional=False)
+def getGuards(email, status):
+    payload = get_jwt_identity()
+
+    student = student_repo.findByEmail(email)
+
+    # checks if student exists
+    if not student:
+        return {'message': 'Student does not exist'}, 400
+    
+    if payload['model'] == SCHOOL:
+        school = util.getInstanceFromJwt()
+
+        registry = registry_repo.findByStudentAndSchoolAndStatus(student, school, Status.ACTIVE)
+
+        # checks if registry is Active
+        if not registry:
+            return {'message': 'student does not have an active registration with your school'}, 400
+        
+    if payload['model'] == GUARDIAN:
+        guardian = util.getInstanceFromJwt()
+
+        guard = guard_repo.findByStudentAndGuardianAndStatus(student, guardian, Status.ACTIVE)
+
+        # checks if guard is active
+        if not guard:
+            return {'message': 'You are not an active guardian to the student'}, 400
+        
+    guards = []
+    
+    if status == 'active':
+        guards = guard_repo.findByStudentAndStatus(student, Status.ACTIVE)
+
+    if status == 'inactive':
+        guards = guard_repo.findByStudentAndStatus(student, Status.INACTIVE)
+
+    storage.close()
+
+    return jsonify(getListOfResponseObjects(GUARD, guards)), 200

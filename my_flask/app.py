@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, current_app
-from regController import reg_bp
-from loginController import login_bp
-from studentController import student_bp
+from blueprints.regController import reg_bp
+from blueprints.loginController import login_bp
+from blueprints.studentController import student_bp
 from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager
 from config import Config

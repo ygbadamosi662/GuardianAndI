@@ -5,7 +5,7 @@ from models.guardian import Guardian
 from models.guard import Guard
 from models.registry import Registry
 from models import storage
-from global_variables import SCHOOL, GUARDIAN, STUDENT
+from global_variables import SCHOOL, GUARDIAN, STUDENT, GUARD, REGISTRY
 
 def getSchoolResponse(school: School) -> dict:
     schoolObj = {}
@@ -49,7 +49,17 @@ def getGuardResponse(guard: Guard) -> dict:
 
     return guardObj
 
-def getListOfResponseObjects(modelType, models) -> list:
+def getRegistryResponse(registry: Registry) -> dict:
+    registryObj = {}
+    session = storage.get_session()
+    regi = session.get(Registry, registry.id)
+    registryObj['student'] = getStudentResponse(regi.registry_student)
+    registryObj['school'] = getSchoolResponse(regi.registry_school)
+    registryObj['status'] = registry.status.value
+
+    return registryObj
+
+def getListOfResponseObjects(modelType, models: list) -> list:
     objList = []
     if modelType == STUDENT:
         for model in models:
@@ -66,12 +76,13 @@ def getListOfResponseObjects(modelType, models) -> list:
             objList.append(getGuardianResponse(model))
         return objList
     
-def getRegistryResponse(registry: Registry) -> dict:
-    registryObj = {}
-    session = storage.get_session()
-    regi = session.get(Registry, registry.id)
-    registryObj['student'] = getStudentResponse(regi.registry_student)
-    registryObj['school'] = getSchoolResponse(regi.registry_school)
-    registryObj['status'] = registry.status.value
-
-    return registryObj
+    if modelType == GUARD:
+        for model in models:
+            objList.append(getGuardResponse(model))
+        return objList
+    
+    if modelType == REGISTRY:
+        for model in models:
+            objList.append(getRegistryResponse(model))
+        return objList
+    
