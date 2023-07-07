@@ -33,6 +33,18 @@ class GuardRepo:
                 return guards
             except SQLAlchemyError:
                 return
+
+    def pageByGuardianAndStatus(self, guardian: Guardian, status: Status, page: int) -> List[Guard]:
+        if guardian:
+            try:
+                page_size = 10
+                offSet = (page - 1) * page_size
+
+                query = self.session.query(Guard).filter(and_(Guard.guard_guardian == guardian, 
+                                                               Guard.status == status)).limit(page_size).offset(offSet)
+                return query.all()
+            except SQLAlchemyError:
+                return
             
     def findByGuardianAndStatusAndTag(self, guardian: Guardian, status: Status, tag: Tag) -> List[Guard]:
         if guardian:
@@ -56,6 +68,18 @@ class GuardRepo:
                 guards = self.session.query(Guard).filter(and_(Guard.guard_student == student, 
                                                                Guard.status == status)).all()
                 return guards
+            except SQLAlchemyError:
+                return
+            
+    def pageByStudentAndStatus(self, student: Student, status: Status, page: int) -> List[Guard]:
+        if student:
+            try:
+                page_size = 10
+                offSet = (page - 1) * page_size
+
+                query = self.session.query(Guard).filter(and_(Guard.guard_student == student, 
+                                                               Guard.status == status)).limit(page_size).offset(offSet)
+                return query.all()
             except SQLAlchemyError:
                 return
             
@@ -95,5 +119,19 @@ class GuardRepo:
                                                                Guard.status == status, 
                                                                Guard.tag == tag)).first()
                 return guards
+            except SQLAlchemyError:
+                return
+            
+    def pageByGuardianAndStatusAndTag(self, guardian: Guardian, status: Status, tag: Tag, page: int) -> Guard:
+
+        if guardian:
+            page_size = 10
+            offSet = (page - 1) * page_size
+
+            try:
+                query = self.session.query(Guard).filter(and_(Guard.guard_guardian == guardian, 
+                                                               Guard.status == status, 
+                                                               Guard.tag == tag)).limit(page_size).offset(offSet)
+                return query.all()
             except SQLAlchemyError:
                 return

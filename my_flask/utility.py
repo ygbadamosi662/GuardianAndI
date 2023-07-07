@@ -103,6 +103,9 @@ class Utility():
         
     def validateGuard(self, guard: Guard) -> bool:
         if guard:
-            return guard.status == Status.ACTIVE    
+            return guard.status == Status.ACTIVE
+
+    def closeSession(self):
+        storage.close()   
 
 util = Utility()  

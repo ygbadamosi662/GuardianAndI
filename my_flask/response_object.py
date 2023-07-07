@@ -24,13 +24,17 @@ def getGuardianResponse(guardian: Guardian) -> dict:
 
     return guardianObj
 
-def getStudentResponse(student: Student) -> dict:
+def getStudentResponse(student: Student, pure: bool = False) -> dict:
     studentObj = {}
     studentObj['name'] = student.first_name + " " + student.last_name
     studentObj['email'] = student.email
     studentObj['gender'] = student.gender.value
     studentObj['grade'] = student.grade
     studentObj['dob'] = student.dob
+    
+    if pure:
+        return studentObj
+    
     session = storage.get_session()
     school = session.get(Student, student.id).student_school
     if school:
@@ -59,11 +63,11 @@ def getRegistryResponse(registry: Registry) -> dict:
 
     return registryObj
 
-def getListOfResponseObjects(modelType, models: list) -> list:
+def getListOfResponseObjects(modelType, models: list, pure: bool = False) -> list:
     objList = []
     if modelType == STUDENT:
         for model in models:
-            objList.append(getStudentResponse(model))
+            objList.append(getStudentResponse(model, pure))
         return objList
 
     if modelType == SCHOOL:

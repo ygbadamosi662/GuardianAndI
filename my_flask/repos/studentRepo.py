@@ -1,10 +1,10 @@
 "Defines StudentRepo class"
 from models import storage
-from models.guard import Guard
-from models.guardian import Guardian
+from typing import List, Union
 from models.student import Student
 from models.school import School
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import and_
 
 
 class StudentRepo:
@@ -25,6 +25,17 @@ class StudentRepo:
                 return student
             except SQLAlchemyError:
                 return
+            
+    def pageBySchoolAndGrade(self, school: School, grade: str, page: int) -> List[Student]:
+        if school:
+            try:
+                page_size = 10
+                offset = (page - 1) * page_size
+                query = self.session.query(Student).filter(and_(Student.student_school == school, 
+                                                                Student.grade == grade)).limit(page_size).offset(offset)
+                return query.all()
+            except SQLAlchemyError as err:
+                return 
 
     def findAll(self):
         try:

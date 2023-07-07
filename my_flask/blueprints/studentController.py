@@ -3,14 +3,14 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from utility import util
-from models import storage
+# from models import storage
 from response_object import getStudentResponse, getListOfResponseObjects, getGuardResponse, getRegistryResponse
 from repos.studentRepo import StudentRepo
 from repos.guardRepo import GuardRepo, Guard
 from repos.guardianRepo import GuardianRepo
 from repos.schoolRepo import SchoolRepo, School
 from repos.registryRepo import RegistryRepo, Registry
-from global_variables import SCHOOL, STUDENT, GUARDIAN, GUARD
+from global_variables import SCHOOL, STUDENT, GUARDIAN, GUARD, REGISTRY
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 from schemas import link_schema, update_schema
@@ -24,17 +24,19 @@ school_repo = SchoolRepo()
 registry_repo = RegistryRepo()
 
 
-@student_bp.route('/student/get/student', methods=['GET'])
+@student_bp.route('/get/student', methods=['GET'])
 @jwt_required(optional=False)
 def getStudent():
     email = request.args.get('email')
     student = student_repo.findByEmail(email)
+
+    util.closeSession()
     if student:
         return jsonify(getStudentResponse(student)), 200
     
     return {'error_message': 'Cant find student'}, 400
 
-@student_bp.route('/student/get/students', methods=['GET'])
+@student_bp.route('/get/students', methods=['GET'])
 @jwt_required(optional=False)
 def getStudents():
     payload = get_jwt_identity()
@@ -42,9 +44,10 @@ def getStudents():
         return {'message': 'Invalid Credentials'}, 400
     
     students = util.getInstanceFromJwt().school_students
-    return jsonify(getListOfResponseObjects(STUDENT, students)), 200
+    util.closeSession()
+    return jsonify(getListOfResponseObjects(STUDENT, students, True)), 200
 
-@student_bp.route('/student/link', methods=['POST'])
+@student_bp.route('/link', methods=['POST'])
 @jwt_required(optional=False)
 def linkStudent():
     try:
@@ -82,7 +85,7 @@ def linkStudent():
         guard = Guard(guard_student=student, guard_guardian=new_guardian, tag=linkData['tag'], status=Status.ACTIVE_PENDING)
         util.persistModel(guard)
 
-        storage.close()
+        util.closeSession()
 
         return jsonify(getGuardResponse(guard))
     
@@ -91,7 +94,7 @@ def linkStudent():
     except SQLAlchemyError as err:
         return {'message': err._message()}
 
-@student_bp.route('/student/updates/school', methods=['POST'])
+@student_bp.route('/updates/school', methods=['POST'])
 @jwt_required(optional=False) 
 def backToSchool():
     try:
@@ -132,7 +135,7 @@ def backToSchool():
         util.persistModel(registry)
 
         savedRegistry = registry_repo.findByStudentAndStatus(student, Status.ACTIVE)
-        storage.close()
+        util.closeSession()
 
         return jsonify(getRegistryResponse(savedRegistry)), 200
         
@@ -140,7 +143,7 @@ def backToSchool():
     except ValidationError as err:
         return {'message': err.messages}, 400
     
-@student_bp.route('/student/remove/school/<email>', methods=['GET'])
+@student_bp.route('/remove/school/<email>', methods=['GET'])
 @jwt_required(optional=False)
 def removeSchool(email):
     payload = get_jwt_identity()
@@ -178,14 +181,14 @@ def removeSchool(email):
     util.persistModel(student)
     util.persistModel(registry)
 
-    storage.close()
+    util.closeSession()
     
 
     return jsonify(getRegistryResponse(registry)), 200
 
-@student_bp.route('/student/get/guardian/<email>/<status>', methods=['GET'])
+@student_bp.route('/get/guard/history/<email>/<status>/<int:page>', methods=['GET'])
 @jwt_required(optional=False)
-def getGuards(email, status):
+def getGuards(email, status, page):
     payload = get_jwt_identity()
 
     student = student_repo.findByEmail(email)
@@ -212,14 +215,56 @@ def getGuards(email, status):
         if not guard:
             return {'message': 'You are not an active guardian to the student'}, 400
         
-    guards = []
-    
+    realStatus = {}
     if status == 'active':
-        guards = guard_repo.findByStudentAndStatus(student, Status.ACTIVE)
+        realStatus = Status.ACTIVE
 
     if status == 'inactive':
-        guards = guard_repo.findByStudentAndStatus(student, Status.INACTIVE)
+        realStatus = Status.INACTIVE
 
-    storage.close()
+    guards = guard_repo.pageByStudentAndStatus(student, realStatus, page)
 
-    return jsonify(getListOfResponseObjects(GUARD, guards)), 200
+    util.closeSession()
+
+    return jsonify(getListOfResponseObjects(GUARD, guards, True)), 200
+
+@student_bp.route('/get/registry/history/<email>/<status>/<int:page>', methods=['GET'])
+@jwt_required(optional=False)
+def getGuardianGuardHistory(email, status, page):
+    payload = get_jwt_identity()
+
+    student = student_repo.findByEmail(email)
+
+    # checks if student exists
+    if not student:
+        return {'message': 'Student does not exist'}, 400
+    
+    if payload['model'] == SCHOOL:
+        school = util.getInstanceFromJwt()
+
+        registry = registry_repo.findByStudentAndSchoolAndStatus(student, school, Status.ACTIVE)
+
+        # checks if registry is Active
+        if not registry:
+            return {'message': 'student does not have an active registration with your school'}, 400
+        
+    if payload['model'] == GUARDIAN:
+        guardian = util.getInstanceFromJwt()
+
+        guard = guard_repo.findByStudentAndGuardianAndStatus(student, guardian, Status.ACTIVE)
+
+        # checks if guard is active
+        if not guard:
+            return {'message': 'You are not an active guardian to the student'}, 400
+    
+    realStatus = {}
+    if status == 'active':
+        realStatus = Status.ACTIVE
+
+    if status == 'inactive':
+        realStatus = Status.INACTIVE    
+    
+    registries = registry_repo.pageByStudentAndStatus(student, realStatus, page)
+    util.closeSession()
+
+    return jsonify(getListOfResponseObjects(REGISTRY, registries, True)), 200

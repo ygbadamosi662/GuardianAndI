@@ -5,6 +5,7 @@ from models.registry import Registry
 from models.student import Student
 from models.school import School
 from Enums.status_enum import Status
+from Enums.tag_enum import Tag
 from sqlalchemy import and_
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -83,7 +84,17 @@ class RegistryRepo:
         try:
             page_size = 10 
             offset = (page - 1) * page_size
-            query = self.session.query(Registry).fiter(and_(Registry.registry_school == school, 
+            query = self.session.query(Registry).filter(and_(Registry.registry_school == school, 
+                                                            Registry.status == status)).limit(page_size).offset(offset)
+            return query.all()
+        except SQLAlchemyError as err:
+            return err._message()
+        
+    def pageByStudentAndStatus(self, student: Student, status: Status, page: int) -> List[Registry]:
+        try:
+            page_size = 10 
+            offset = (page - 1) * page_size
+            query = self.session.query(Registry).filter(and_(Registry.registry_student == student, 
                                                             Registry.status == status)).limit(page_size).offset(offset)
             return query.all()
         except SQLAlchemyError as err:
