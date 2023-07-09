@@ -1,9 +1,13 @@
 """Defines the Utility class"""
 from models import storage
+from typing import Union
 from flask_jwt_extended import get_jwt_identity
 from repos.guardianRepo import GuardianRepo, Guardian
 from repos.schoolRepo import SchoolRepo, School
 from repos.guardRepo import GuardRepo, Guard
+from models.pick_and_drop import PickAndDrop
+from repos.registryRepo import registry_repo
+from repos.pick_and_dropRepo import pad_repo
 from repos.registryRepo import RegistryRepo, Registry
 from models.student import Student
 from global_variables import GUARDIAN, SCHOOL
@@ -106,6 +110,16 @@ class Utility():
             return guard.status == Status.ACTIVE
 
     def closeSession(self):
-        storage.close()   
+        storage.close()
 
+    def check_for_active_pad(self, registry: Registry, give: bool = False) -> Union[bool, PickAndDrop]:
+        if registry:
+            if give:
+                    return pad_repo.findOngoingPadByRegistry(registry)
+            
+            if pad_repo.findOngoingPadByRegistry(registry):
+                return True
+            
+            return False
+        
 util = Utility()  

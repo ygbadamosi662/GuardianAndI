@@ -19,8 +19,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
 
-    sender_notes = relationship("Notification", backref="note_sender", primaryjoin=id==Notification.sender_id)
-    receiver_notes = relationship("Notification", backref="note_receiver", primaryjoin=id==Notification.receiver_id)
+    sender_notes = relationship("Notification", primaryjoin=id==Notification.sender_id)
+    receiver_notes = relationship("Notification", primaryjoin=id==Notification.receiver_id)
     # type: Mapped[str]
 
     __mapper_args__ = {

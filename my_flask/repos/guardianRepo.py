@@ -29,3 +29,5 @@ class GuardianRepo:
             return guardians
         except SQLAlchemyError:
             return
+        
+guardian_repo = GuardianRepo()

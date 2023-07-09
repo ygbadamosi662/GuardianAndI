@@ -135,3 +135,7 @@ class GuardRepo:
                 return query.all()
             except SQLAlchemyError:
                 return
+            
+
+
+guard_repo = GuardRepo()          

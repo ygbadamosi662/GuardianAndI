@@ -41,7 +41,14 @@ class LinkStudent(Schema):
 link_schema = LinkStudent()
 
 class UpdateSchool(Schema):
-    school_email = fields.Email(required=True)
+    user_email = fields.Email(required=True)
     student_email = fields.Email(required=True)
 
 update_schema = UpdateSchool()
+
+class PadSchema(Schema):
+    user_email = fields.Email(required=True)
+    student_email = fields.Email(required=True)
+    action = fields.String(required=True)
+
+pad_schema = PadSchema()

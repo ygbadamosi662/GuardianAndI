@@ -4,11 +4,13 @@ from models.school import School
 from models.guardian import Guardian
 from models.guard import Guard
 from models.registry import Registry
+from models.pick_and_drop import PickAndDrop
 from models import storage
 from global_variables import SCHOOL, GUARDIAN, STUDENT, GUARD, REGISTRY
 
 def getSchoolResponse(school: School) -> dict:
     schoolObj = {}
+    schoolObj['id'] = school.id
     schoolObj['name'] = school.school_name
     schoolObj['email'] = school.email
     schoolObj['address'] = school.address
@@ -18,6 +20,7 @@ def getSchoolResponse(school: School) -> dict:
 
 def getGuardianResponse(guardian: Guardian) -> dict:
     guardianObj = {}
+    guardianObj['id'] = guardian.id
     guardianObj['name'] = guardian.first_name + " " + guardian.last_name
     guardianObj['email'] = guardian.email
     guardianObj['gender'] = guardian.gender.value
@@ -26,6 +29,7 @@ def getGuardianResponse(guardian: Guardian) -> dict:
 
 def getStudentResponse(student: Student, pure: bool = False) -> dict:
     studentObj = {}
+    studentObj['id'] = student.id
     studentObj['name'] = student.first_name + " " + student.last_name
     studentObj['email'] = student.email
     studentObj['gender'] = student.gender.value
@@ -46,6 +50,7 @@ def getGuardResponse(guard: Guard) -> dict:
     guardObj = {}
     guard_ish = storage.get_session().get(Guard, guard.id)
 
+    guardObj['id'] = guard.id
     guardObj['student'] = getStudentResponse(guard_ish.guard_student)
     guardObj['guardian'] = getGuardianResponse(guard_ish.guard_guardian)
     guardObj['tag'] = guard.tag.value
@@ -57,11 +62,23 @@ def getRegistryResponse(registry: Registry) -> dict:
     registryObj = {}
     session = storage.get_session()
     regi = session.get(Registry, registry.id)
+    registryObj['id'] = registry.id
     registryObj['student'] = getStudentResponse(regi.registry_student)
     registryObj['school'] = getSchoolResponse(regi.registry_school)
     registryObj['status'] = registry.status.value
 
     return registryObj
+
+def getPadResponse(pad: PickAndDrop) -> dict:
+    padObj = {}
+    
+    padObj['id'] = pad.id
+    padObj['registry'] = getRegistryResponse(pad.PAD_registry)
+    padObj['guard'] = getGuardResponse(pad.PAD_guard)
+    padObj['auth'] = pad.auth.value
+    padObj['action'] = pad.action.value
+
+    return padObj
 
 def getListOfResponseObjects(modelType, models: list, pure: bool = False) -> list:
     objList = []

@@ -113,9 +113,9 @@ def backToSchool():
             return {'message': 'Cant find student {}'.format(updateData['student_email'])}, 400
         
         # checks if school exist
-        school = school_repo.findByEmail(updateData['school_email'])
+        school = school_repo.findByEmail(updateData['user_email'])
         if school == None:
-            return {'message': 'School {} does not exist'.format(updateData['school_email'])}, 400
+            return {'message': 'School {} does not exist'.format(updateData['user_email'])}, 400
         
         # check if guardian is an active super-guardian of the student
         if util.isGuardian(student, util.getInstanceFromJwt(), True, True) == False:
@@ -123,7 +123,7 @@ def backToSchool():
         
         # checks if student is activeb active student of the provided school already
         if util.ifStudent(student, school):
-            return {'message': 'Student {} has an active registry with school {}'.format(updateData['student_email'], updateData['school_email'])}, 400
+            return {'message': 'Student {} has an active registry with school {}'.format(updateData['student_email'], updateData['user_email'])}, 400
         
         student.student_school = school
         util.persistModel(student)

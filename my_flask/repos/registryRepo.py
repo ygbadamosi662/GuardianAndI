@@ -105,4 +105,7 @@ class RegistryRepo:
             registries = self.session.query(Registry).all()
             return registries
         except SQLAlchemyError:
-            return    
+            return
+
+
+registry_repo = RegistryRepo()          

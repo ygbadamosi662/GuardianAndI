@@ -18,12 +18,17 @@ class StudentRepo:
     def __init__(self):
         self.session = storage.get_session()
 
-    def findByEmail(self, email):
+    def findByEmail(self, email: str)-> Student:
+        
         if email:
+            
             try:
                 student = self.session.query(Student).filter_by(email=email).first()
+                
                 return student
-            except SQLAlchemyError:
+            except SQLAlchemyError as err:
+                
+                print(err)
                 return
             
     def pageBySchoolAndGrade(self, school: School, grade: str, page: int) -> List[Student]:
@@ -43,3 +48,5 @@ class StudentRepo:
             return students
         except SQLAlchemyError:
             return
+        
+student_repo = StudentRepo()        

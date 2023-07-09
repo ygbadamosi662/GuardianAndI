@@ -33,6 +33,7 @@ class Auth(Enum):
     SG_IN = 'SG_IN'
     IN_TRANSIT = 'IN_TRANSIT'
     ARRIVED = 'ARRIVED'
+    FALSE = 'FALSE'
 
     def initiate():
         """sets Auth.INITIATED"""

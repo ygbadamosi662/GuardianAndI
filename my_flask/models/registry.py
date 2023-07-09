@@ -28,7 +28,7 @@ class Registry(BaseModel, Subject):
     registry_school_id: Mapped[int] = mapped_column(ForeignKey("schools.school_id"))
     registry_school = relationship("School", foreign_keys=registry_school_id)
 
-    registry_PADs = relationship("PickAndDrop", backref="PAD_registry", foreign_keys=id)
+    registry_PADs = relationship("PickAndDrop", foreign_keys=id)
 
     __mapper_args__ = {
         "polymorphic_identity": "registry",

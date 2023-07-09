@@ -26,10 +26,10 @@ class Notification(BaseModel, Base):
     permit: Mapped[permit_enum.Permit]
     
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    # note_sender = relationship("User", foreign_keys=sender_id,  back_populates="sender_notes", primaryjoin=User.id==sender_id)
+    note_sender = relationship("User", foreign_keys=sender_id,  back_populates="sender_notes")
 
     receiver_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    # note_receiver = relationship("User", foreign_keys=sender_id, back_populates="receiver_notes")
+    note_receiver = relationship("User", foreign_keys=receiver_id, back_populates="receiver_notes")
 
     subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.id"))
     subject = relationship("Subject" , back_populates="subjects")
