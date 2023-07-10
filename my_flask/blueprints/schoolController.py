@@ -21,7 +21,7 @@ def pageStudentsByGrade(grade, page):
 
     # checks if user is permitted
     if payload['model'] != SCHOOL:
-        return {'message': 'Invalid Credentials'}, 400
+        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
     
     school = util.getInstanceFromJwt()
     if not school:
@@ -38,7 +38,7 @@ def getGuardianGuardHistory(status, page):
     payload = get_jwt_identity()
     # checks if user is permitted
     if payload['model'] != SCHOOL:
-        return {'message': 'Invalid Credentials'}, 400
+        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
     
     school = util.getInstanceFromJwt()
     if not school:

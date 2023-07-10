@@ -41,7 +41,7 @@ def getStudent():
 def getStudents():
     payload = get_jwt_identity()
     if payload['model'] != SCHOOL:
-        return {'message': 'Invalid Credentials'}, 400
+        return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
     
     students = util.getInstanceFromJwt().school_students
     util.closeSession()
@@ -57,7 +57,7 @@ def linkStudent():
         payload = get_jwt_identity()
         # check if the user is a guardian
         if payload['model'] != GUARDIAN:
-            return {'message': 'Invalid Credentials'}, 400
+            return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
         
         student = student_repo.findByEmail(linkData['student_email'])
         # check if student exists
@@ -105,7 +105,7 @@ def backToSchool():
         payload = get_jwt_identity()
         # checks if model is allowed
         if payload['model'] != GUARDIAN:
-            return {'message': 'Invalid Credentials'}, 400
+            return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
         
         student = student_repo.findByEmail(updateData['student_email'])
         # checks if student exist

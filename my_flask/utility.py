@@ -1,16 +1,15 @@
 """Defines the Utility class"""
 from models import storage
-from typing import Union
+from typing import Union, List
 from flask_jwt_extended import get_jwt_identity
-from repos.guardianRepo import GuardianRepo, Guardian
-from repos.schoolRepo import SchoolRepo, School
-from repos.guardRepo import GuardRepo, Guard
+from repos.guardianRepo import guardian_repo, Guardian
+from repos.schoolRepo import school_repo, School
+from repos.guardRepo import guard_repo, Guard
 from models.pick_and_drop import PickAndDrop
-from repos.registryRepo import registry_repo
 from repos.pick_and_dropRepo import pad_repo
-from repos.registryRepo import RegistryRepo, Registry
+from repos.registryRepo import registry_repo, Registry
 from models.student import Student
-from global_variables import GUARDIAN, SCHOOL
+from global_variables import GUARDIAN, SCHOOL, PICK_AND_DROP, REGISTRY, GUARD, STUDENT
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 
@@ -20,15 +19,16 @@ class Utility():
     """
     
     session = None
-    guardianRepo = GuardianRepo()
-    schoolRepo = SchoolRepo()
-    guardRepo = GuardRepo()
+    guardianRepo = guardian_repo
+    schoolRepo = school_repo
+    guardRepo = guard_repo
+    who_called = ''
+    keep = {}
 
     def __init__(self):
         self.session = storage.get_session()
 
     def getInstanceFromJwt(self):
-        # decoded = decode_token(jwtToken)
         payload = get_jwt_identity()
 
         if payload['model'] == GUARDIAN:
@@ -46,6 +46,7 @@ class Utility():
         return None
     
     def persistModel(self, model):
+        self.discard()
         storage.new(model)
         storage.save()
 
@@ -61,6 +62,7 @@ class Utility():
             andIsActive: if True, function will return True if guard is Active, 
                          returns False otherwise(defaults to False if not set)
         """
+        self.discard()
         guards = self.guardRepo.findByStudent(student)
         returnee = False
         
@@ -81,6 +83,7 @@ class Utility():
         return returnee
 
     def superLimit(self, student: Student) -> bool:
+        self.discard()
         guards = student.student_guards
         limit = 0
 
@@ -91,6 +94,7 @@ class Utility():
         return limit < 2
     
     def ifStudent(self, student: Student, school: School) -> bool:
+        self.discard()
         session = storage.get_session()
         school_ish = session.get(School, school.id)
         
@@ -102,24 +106,111 @@ class Utility():
         return False
 
     def validateRegistry(self, registry: Registry) -> bool:
+        self.discard()
         if registry:
             return registry.status == Status.ACTIVE
         
-    def validateGuard(self, guard: Guard) -> bool:
+    def validateGuard(self, guard: Guard, keep: bool = False) -> bool:
         if guard:
             return guard.status == Status.ACTIVE
 
+    def discard(self, identity: str = ''):
+        if identity == '':
+            self.keep = {}
+        
+        self.keep[identity] = None
+
+
     def closeSession(self):
+        self.discard()
         storage.close()
 
-    def check_for_active_pad(self, registry: Registry, give: bool = False) -> Union[bool, PickAndDrop]:
+    def monitor(self, identity: str):
+        self.who_called = identity
+
+    def if_i_called(self, identity: str) -> bool:
+        return self.who_called == identity
+    
+    def keep_it(self, treasure):
+        self.keep[self.who_called] = treasure
+
+    def get_keep(self, identity: str):
+        if self.if_i_called(identity):
+            return self.keep[identity]
+
+    def check_for_active_registry_pad(self, registry: Registry, keep: bool = False) -> Union[bool, PickAndDrop]:
+        if keep:
+            self.monitor('check_for_active_registry_pad')
+
         if registry:
-            if give:
-                    return pad_repo.findOngoingPadByRegistry(registry)
+            pad = pad_repo.findOngoingPadByRegistry(registry)
+            if pad:
+                if keep:
+                    self.keep_it(pad)
+                    if pad:
+                        return True
+                    return False
+                
+                return pad
             
-            if pad_repo.findOngoingPadByRegistry(registry):
+            return False
+        
+    def check_for_active_guard_pad(self, guard: Guard, keep: bool = False) -> Union[bool, PickAndDrop]:
+        if keep:
+            self.monitor('check_for_active_registry_pad')
+
+        if guard:
+            pad = pad_repo.findOngoingPadByRegistry(guard)
+            if pad:
+                if keep:
+                    self.keep['check_for_active_registry_pad'] = pad
+                    if pad:
+                        return True
+                    return False
+                
+                return pad
+            
+            return False
+
+    def pad_validate_school(self, pad: PickAndDrop, school: School) -> bool:
+        if pad and school:
+            if pad.PAD_registry.registry_school == school:
                 return True
             
             return False
         
+    def pad_validate_guardian(self, pad: PickAndDrop, guardian: Guardian, who: str = 'all') -> bool:
+        if not pad or not guardian:
+            return False
+        
+        if who == 'all':
+            guardians = self.get_pad_guardians(pad)
+
+        if who == 'super':
+            guardians = self.get_pad_guardians(pad, Tag.SUPER_GUARDIAN)
+
+        if who == 'school':
+             guardians = self.get_pad_guardians(pad, Tag.SCHOOL_GUARDIAN)   
+
+        if who == 'aux':
+             guardians = self.get_pad_guardians(pad, Tag.SCHOOL_GUARDIAN)
+
+        for pad_guardian in guardians:
+            if pad_guardian == guardian:
+                return True
+            
+        return False
+
+    def get_pad_guardians(self, pad: PickAndDrop, tag: Tag = None) -> List[Guardian]:
+        
+        if pad:
+            if tag == None:
+                guards = guard_repo.findByStudentAndStatus(pad.PAD_guard.guard_student, Status.ACTIVE)
+                if guards:
+                    return [guard.guard_guardian for guard in guards]
+            
+            guards = guard_repo.findByStudentAndStatusAndTag(pad.PAD_guard.guard_student, Status.ACTIVE, tag)
+            return [guard.guard_guardian for guard in guards]
+        
+    
 util = Utility()  

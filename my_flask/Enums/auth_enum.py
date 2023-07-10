@@ -20,17 +20,18 @@ class Auth(Enum):
     """
 
     # should go:
-    # INITIATED ➡ SCHOOL_IN ➡ SG_PENDING ➡ SG_IN ➡ IN_TRANSIT ➡ ARRIVED
-    #            ⬇                   ⬇                  
-    #         SCHOOL_OUT           SG_OUT                  
+    # INITIATED ➡ SCHOOL_IN ➡ SG_IN ➡ IN_TRANSIT ➡ ARRIVED
+    #            ⬇                ⬇                      ⬇                             
+    #         SCHOOL_OUT        SG_OUT                FALSE  
 
 
     INITIATED = 'INITIATED'
     SCHOOL_IN = 'SCHOOL_IN'
     SCHOOL_OUT = 'SCHOOL_OUT'
-    SG_PENDING = 'SG_PENDING'
     SG_OUT = 'SG_OUT'
     SG_IN = 'SG_IN'
+    READY = 'READY'
+    CONFLICT = 'CONFLICT'
     IN_TRANSIT = 'IN_TRANSIT'
     ARRIVED = 'ARRIVED'
     FALSE = 'FALSE'
@@ -39,7 +40,7 @@ class Auth(Enum):
         """sets Auth.INITIATED"""
         return Auth.INITIATED
     
-    def nextOfInit(self, choice):
+    def nextOfInit(self, choice: bool) -> Enum:
         """
         sets next in sequence according to the should go map, conditionally, 
         choice is a bool, True moves ahead in the sequence and False goes the OUT route
@@ -49,34 +50,35 @@ class Auth(Enum):
                 return Auth.SCHOOL_IN
             return Auth.SCHOOL_OUT
         
-    def nextOfSchool_in(self):
+    def nextOfSchool_in(self, choice: bool) -> Enum:
         """
         sets next in sequence according to the should go map, conditionally, 
         choice is a bool, True moves ahead in the sequence and False goes the OUT route
         """
         if self == Auth.SCHOOL_IN:
-            return Auth.SG_PENDING
-        
-    def nextOfSG_PENDING(self, choice):
-        """
-        sets next in sequence according to the should go map, conditionally, 
-        choice is a bool, True moves ahead in the sequence and False goes the OUT route
-        """
-        if self == Auth.SG_PENDING:
             if choice:
                 return Auth.SG_IN
-            return Auth.SG_OUT
+            return Auth.SCHOOL_OUT
         
-    def nextOfSG_IN(self, choice):
+    def nextOfSG_IN(self, choice: bool) -> Enum:
         """
         sets next in sequence according to the should go map, conditionally, 
         choice is a bool, True moves ahead in the sequence and False goes the OUT route
         """
         if self == Auth.SG_IN:
             if choice:
-                return Auth.IN_TRANSIT
+                return Auth.READY
+            return Auth.CONFLICT
         
-    def nextOfIN_TRANSIT(self, choice):
+    def nextOfREADY(self) -> Enum:
+        """
+        sets next in sequence according to the should go map
+        in this case it returns Auth.IN_TRANSIT, no backsies
+        """
+        if self == Auth.READY:
+            return Auth.IN_TRANSIT
+        
+    def nextOfIN_TRANSIT(self, choice: bool) -> Enum:
         """
         sets next in sequence according to the should go map, conditionally, 
         choice is a bool, True moves ahead in the sequence and False goes the OUT route
@@ -84,22 +86,21 @@ class Auth(Enum):
         if self == Auth.IN_TRANSIT:
             if choice:
                 return Auth.ARRIVED
+            return Auth.FALSE
             
-    def next(self, choice):
+    def next(self, choice: bool) -> Enum:
         """
         defines one function to call all the mextOf.... functions defined conditionally
         based on the current Auth Enum
         """
         if self == Auth.INITIATED:
-            self.nextOfInit(self, choice)
+            return self.nextOfInit(choice)
         if self == Auth.SCHOOL_IN:
-            self.nextOfSchool_in(self, choice)
-        if self == Auth.SG_PENDING:
-            self.nextOfSG_PENDING(self, choice)
+            return self.nextOfSchool_in(choice)
         if self == Auth.SG_IN:
-            self.nextOfSG_IN(self, choice)
+            return self.nextOfSG_IN(choice)
         if self == Auth.IN_TRANSIT:
-            self.nextOfIN_TRANSIT(self, choice)
+            return self.nextOfIN_TRANSIT(choice)
 
 
     

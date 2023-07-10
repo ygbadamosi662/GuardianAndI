@@ -41,6 +41,9 @@ class PickAndDropRepo:
             query = self.session.query(PickAndDrop).filter(and_(PickAndDrop.PAD_guard.guard_guardian == guardian, PickAndDrop.auth != Auth.ARRIVED, PickAndDrop.auth != Auth.FALSE, PickAndDrop.auth != Auth.SCHOOL_OUT, PickAndDrop.auth != Auth.SG_OUT))
 
             return query.all()
+        
+    def findById(self, id: int) -> PickAndDrop:
+        return self.session.query(PickAndDrop).filter_by(id=id).first()
 
 
 pad_repo = PickAndDropRepo()

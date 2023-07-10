@@ -21,7 +21,7 @@ def guardianGetsStudents(tag, page):
     payload = get_jwt_identity()
 
     if payload['model'] != GUARDIAN:
-        return {'message': 'Invalid Credentials'}, 400
+        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
     
     guardian = util.getInstanceFromJwt()
     if not guardian:
@@ -46,7 +46,7 @@ def getGuardianGuardHistory(status, page):
     payload = get_jwt_identity()
     # checks if user is permitted
     if payload['model'] != GUARDIAN:
-        return {'message': 'Invalid Credentials'}, 400
+        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
     
     guardian = util.getInstanceFromJwt()
     if not guardian:

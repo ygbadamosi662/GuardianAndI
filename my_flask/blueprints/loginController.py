@@ -34,7 +34,7 @@ def loginSchool():
     school = session.query(School).filter_by(email=loginData['email']).first()
 
     if not school:
-        return jsonify({'message': 'Invalid Credentials'}), 400
+        return jsonify({'message': 'Invalid Credentials, only {} is allowed'.format(SCHOOL)}), 400
     
     if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), school.password.encode('utf-8')):
         return jsonify({'message': 'Invalid Credentials'}), 400
@@ -62,7 +62,7 @@ def loginGuardian():
     guardian = session.query(Guardian).filter_by(email=loginData['email']).first()
 
     if not guardian:
-        return jsonify({'message': 'Invalid Credentials'}), 400
+        return jsonify({'message': 'Invalid Credentials, only {} is allowed'.format(GUARDIAN)}), 400
     
     if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), guardian.password.encode('utf-8')):
         return jsonify({'message': 'Invalid Credentials'}), 400

@@ -73,8 +73,10 @@ def getPadResponse(pad: PickAndDrop) -> dict:
     padObj = {}
     
     padObj['id'] = pad.id
-    padObj['registry'] = getRegistryResponse(pad.PAD_registry)
-    padObj['guard'] = getGuardResponse(pad.PAD_guard)
+    session = storage.get_session()
+    pad_ish = session.get(PickAndDrop, pad.id)
+    padObj['registry'] = getRegistryResponse(pad_ish.PAD_registry)
+    padObj['guard'] = getGuardResponse(pad_ish.PAD_guard)
     padObj['auth'] = pad.auth.value
     padObj['action'] = pad.action.value
 
