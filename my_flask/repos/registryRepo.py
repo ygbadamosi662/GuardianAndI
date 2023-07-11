@@ -98,7 +98,7 @@ class RegistryRepo:
                                                             Registry.status == status)).limit(page_size).offset(offset)
             return query.all()
         except SQLAlchemyError as err:
-            return err._message()
+            print(err._message())
             
     def findAll(self):
         try:

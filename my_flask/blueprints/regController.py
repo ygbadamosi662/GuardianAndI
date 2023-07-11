@@ -9,7 +9,7 @@ from models.registry import Registry
 from models.guard import Guard
 # from models.notification import Notification
 from utility import util
-from global_variables import SCHOOL, GUARDIAN
+from global_variables import SCHOOL, GUARDIAN, STUDENT
 from repos.studentRepo import StudentRepo
 from repos.guardianRepo import GuardianRepo
 from repos.schoolRepo import SchoolRepo
@@ -69,13 +69,16 @@ def schoolReg():
         data = request.get_json()
         schoolData = school_schema.load(data)
 
+        # checks table integrity
+        if util.validate_table_integrity(schoolData['email'], SCHOOL):
+            return {'Message': '{} already exists'.format(schoolData['email'])}, 400
+
         school = School(school_name=schoolData['school_name'], email=schoolData['email'], 
                         password=schoolData['password'], address=schoolData['address'], 
                         city=schoolData['city'])
         
-        storage.new(school)
-        storage.save()
-        storage.close()
+        util.persistModel(school)
+        util.closeSession()
 
         return jsonify(school_schema.dump(schoolData)), 200
     except ValidationError as err:
@@ -87,11 +90,14 @@ def guardianReg():
         data = request.get_json()
         guardianData = guardian_schema.load(data)
 
+        # checks table integrity
+        if util.validate_table_integrity(guardianData['email'], GUARDIAN):
+            return {'Message': '{} already exists'.format(guardianData['email'])}, 400
+
         guardian = Guardian(first_name=guardianData['first_name'], last_name=guardianData['last_name'], email=guardianData['email'], password=guardianData['password'], gender=guardianData['gender'], dob=guardianData['dob'])
         
-        storage.new(guardian)
-        storage.save()
-        storage.close()
+        util.persistModel(guardian)
+        util.closeSession()
 
         return jsonify(guardian_schema.dump(guardianData)), 200
     except ValidationError as err:
@@ -105,8 +111,13 @@ def studentReg():
         data = request.get_json()
         payload = get_jwt_identity()
 
+        studentData = student_schema.load(data)
+
+        # checks table integrity
+        if util.validate_table_integrity(studentData['email'], STUDENT):
+            return {'Message': '{} already exists'.format(studentData['email'])}, 400
+
         if payload['model'] == SCHOOL:
-            studentData = student_schema.load(data)
 
             student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
             school = util.getInstanceFromJwt()
@@ -130,7 +141,6 @@ def studentReg():
                 return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
         
         if payload['model'] == GUARDIAN:
-            studentData = student_schema.load(data)
 
             student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
 
@@ -156,7 +166,7 @@ def studentReg():
             else:
                 return {'message': 'something is wrong, guardian not set'}, 400    
         
-        storage.close()
+        util.closeSession()
 
         return jsonify(student_schema.dump(studentData)), 200
     except ValidationError as err:

@@ -76,7 +76,7 @@ def initiateDrop():
     except ValidationError as err:
         return {'message': err.messages}, 400
     
-@pad_bp.route('/school/<int:id>/<yes_or_no>', methods=['GET'])
+@pad_bp.route('/school/<int:id>/<string:yes_or_no>', methods=['GET'])
 @jwt_required(optional=False)
 def school_yes_or_no(id, yes_or_no):
     payload = get_jwt_identity()
@@ -119,7 +119,7 @@ def school_yes_or_no(id, yes_or_no):
 
     return jsonify(getPadResponse(pad)), 200
 
-@pad_bp.route('/guardian/<int:id>/<yes_or_no>', methods=['GET'])
+@pad_bp.route('/guardian/<int:id>/<string:yes_or_no>', methods=['GET'])
 @jwt_required(optional=False)
 def guardian_yes_or_no(id, yes_or_no):
     payload = get_jwt_identity()
@@ -183,9 +183,9 @@ def guardian_yes_or_no(id, yes_or_no):
 
     return jsonify(getPadResponse(pad)), 200
 
-@pad_bp.route('/school/pick/ready/<int:id>', methods=['GET'])
+@pad_bp.route('/school/pick/ready/<int:id>/<string:yes_or_no>', methods=['GET'])
 @jwt_required(optional=False)
-def pick_up_ready(id):
+def pick_up_ready(id, yes_or_no):
     payload = get_jwt_identity()
     # checks credentials
     if payload['model'] != SCHOOL:
@@ -209,16 +209,22 @@ def pick_up_ready(id):
     if pad.auth != Auth.SG_IN:
         return {'Message': 'PAD does not have the proper Authorization'}, 400
     
-    pad.auth = pad.auth.nextOfSG_IN(True)
+    # READY if yes
+    if yes_or_no == 'yes':
+        pad.auth = pad.auth.nextOfSG_IN(True)
+
+    # CONFLICT if no
+    if yes_or_no == 'no':
+        pad.auth = pad.auth.nextOfSG_IN(False)
 
     util.persistModel(pad)
     util.closeSession()
 
     return jsonify(getPadResponse(pad)), 200
 
-@pad_bp.route('/guardian/drop/ready/<int:id>', methods=['GET'])
+@pad_bp.route('/guardian/drop/ready/<int:id>/<string:yes_or_no>', methods=['GET'])
 @jwt_required(optional=False)
-def drop_off_ready(id):
+def drop_off_ready(id, yes_or_no):
     payload = get_jwt_identity()
     # checks credentials
     if payload['model'] != GUARDIAN:
@@ -248,10 +254,134 @@ def drop_off_ready(id):
     if pad.auth != Auth.SG_IN:
         return {'Message': 'PAD does not have the proper Authorization'}, 400
     
-    pad.auth = pad.auth.nextOfSG_IN(True)
-    print(pad.auth)
+    # READY if yes
+    if yes_or_no == 'yes':
+        pad.auth = pad.auth.nextOfSG_IN(True)
+
+    # CONFLICT if no
+    if yes_or_no == 'no':
+        pad.auth = pad.auth.nextOfSG_IN(False)
+   
+    util.persistModel(pad)
+    util.closeSession()
+
+    return jsonify(getPadResponse(pad)), 200
+
+@pad_bp.route('/shoo/<int:id>/<string:yes_or_no>', methods=['GET'])
+@jwt_required(optional=False)
+def shoo(id, yes_or_no):
+    payload = get_jwt_identity()
+    user = {}
+    to = {}
+    pad = pad_repo.findById(id)
+    # checks if pad exist
+    if not pad:
+        return {'Message': 'PAD does not exist'}, 400
+    
+    
+    if payload['model'] == GUARDIAN:
+        guardian = util.getInstanceFromJwt()
+        # checks guardian validity
+        if util.pad_validate_guardian(pad, guardian) == False:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        # checks super_guardian validity
+        if util.pad_validate_guardian(pad, guardian, 'super') == False:
+            return {'Message': 'Above Your pay grade'}, 400
+        
+        if pad.auth == Auth.READY:
+            msg = 'Guardian {} is READY, but is not in possesion of your ward yet'
+            guardian_name = guardian.first_name +" "+ guardian.last_name
+            return {'Message': msg.format(guardian_name)}, 400
+        
+        
+        # checks if action is permitted
+        if pad.action != Action.PICK_UP:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        if pad.auth == Auth.READY:
+            msg = 'Guardian {} is READY, but is not in possesion of your ward {} yet'
+            guardian_name = guardian
+            return {'Message': msg.format()}
+        
+        user = guardian
+        
+    if payload['model'] == SCHOOL:
+        
+        school = util.getInstanceFromJwt()
+        # checks school validity
+        if util.pad_validate_school(pad, school) == False:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        if pad.auth == Auth.READY:
+            msg = 'Guardian {} is READY, but is not in possesion of your student yet'
+            guardian_name = guardian.first_name +" "+ guardian.last_name
+            return {'Message': msg.format(guardian_name)}, 400
+        
+        # checks if action is permitted
+        if pad.action != Action.DROP_OFF:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        user = school
+
+    if pad.auth == Auth.CONFLICT:
+            return {'Message': 'There is a CONFLICT with the given PAD'}, 400
+            
+    
+    # checks authorization
+    if (pad.auth != Auth.IN_TRANSIT) and (pad.auth != Auth.ARRIVED):
+        return {'Message': 'PAD is not READY'}, 400
+    
+    # if ARRIVED
+    if pad.auth == Auth.ARRIVED:
+        return {'Message': 'Student has ARRIVED already'}, 200
+    
+    if yes_or_no == 'no':
+        pad.auth = pad.auth.next(False)
+        # raise an alarm
+
+    if yes_or_no == 'yes':
+        pad.auth = pad.auth.next(True)
 
     util.persistModel(pad)
     util.closeSession()
 
     return jsonify(getPadResponse(pad)), 200
+
+@pad_bp.route('/pad/<int:id>', methods=['GET'])
+@jwt_required(optional=False)
+def get_pads(id: int):
+    payload = get_jwt_identity()
+    if not id:
+        return {'Message': 'Which pad?...id is not set'}, 400
+
+    pad = pad_repo.findById(id)
+    if not pad:
+        return {'Message': 'PAD does not exist'}, 400
+    
+    if payload['model'] == GUARDIAN:
+        guardian = util.getInstanceFromJwt()
+        
+        # check tag
+        if util.pad_validate_guardian(pad, guardian, 'all'):
+            return {'Message': 'Invalid Credentials'}, 400
+            
+        if util.pad_validate_guardian(pad, guardian, 'school') or util.pad_validate_guardian(pad, guardian, 'aux'):
+            if pad.PAD_guard.guard_guardian != guardian:
+                return {'Message': 'Invalid Credentials'}, 400
+
+    if payload['model'] == SCHOOL:
+        school = util.getInstanceFromJwt()
+
+        # validate school
+        if util.pad_validate_school(pad, school) == False:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+    util.closeSession()
+
+    return jsonify(getPadResponse(pad)), 200
+        
+
+    
+
+    

@@ -1,5 +1,6 @@
 """Defines the Utility class"""
 from models import storage
+from sqlalchemy import exists
 from typing import Union, List
 from flask_jwt_extended import get_jwt_identity
 from repos.guardianRepo import guardian_repo, Guardian
@@ -120,7 +121,6 @@ class Utility():
         
         self.keep[identity] = None
 
-
     def closeSession(self):
         self.discard()
         storage.close()
@@ -174,10 +174,7 @@ class Utility():
 
     def pad_validate_school(self, pad: PickAndDrop, school: School) -> bool:
         if pad and school:
-            if pad.PAD_registry.registry_school == school:
-                return True
-            
-            return False
+            return pad.PAD_registry.registry_school == school
         
     def pad_validate_guardian(self, pad: PickAndDrop, guardian: Guardian, who: str = 'all') -> bool:
         if not pad or not guardian:
@@ -193,7 +190,7 @@ class Utility():
              guardians = self.get_pad_guardians(pad, Tag.SCHOOL_GUARDIAN)   
 
         if who == 'aux':
-             guardians = self.get_pad_guardians(pad, Tag.SCHOOL_GUARDIAN)
+             guardians = self.get_pad_guardians(pad, Tag.AUXILLARY_GUARDIAN)
 
         for pad_guardian in guardians:
             if pad_guardian == guardian:
@@ -212,5 +209,16 @@ class Utility():
             guards = guard_repo.findByStudentAndStatusAndTag(pad.PAD_guard.guard_student, Status.ACTIVE, tag)
             return [guard.guard_guardian for guard in guards]
         
-    
+    def validate_table_integrity(self, email: str, model: str) -> bool:
+        if model == SCHOOL:
+            exists_query = self.session.query(exists().where(School.email == email))
+
+        if model == GUARDIAN:    
+            exists_query = self.session.query(exists().where(Guardian.email == email))
+
+        if model == STUDENT:
+            exists_query = self.session.query(exists().where(Student.email == email))
+
+        return self.session.scalar(exists_query)
+
 util = Utility()  

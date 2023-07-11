@@ -34,7 +34,6 @@ class Auth(Enum):
     CONFLICT = 'CONFLICT'
     IN_TRANSIT = 'IN_TRANSIT'
     ARRIVED = 'ARRIVED'
-    FALSE = 'FALSE'
 
     def initiate():
         """sets Auth.INITIATED"""
@@ -70,13 +69,15 @@ class Auth(Enum):
                 return Auth.READY
             return Auth.CONFLICT
         
-    def nextOfREADY(self) -> Enum:
+    def nextOfREADY(self, choice: bool) -> Enum:
         """
         sets next in sequence according to the should go map
         in this case it returns Auth.IN_TRANSIT, no backsies
         """
         if self == Auth.READY:
-            return Auth.IN_TRANSIT
+            if choice:
+                return Auth.IN_TRANSIT
+            return Auth.CONFLICT
         
     def nextOfIN_TRANSIT(self, choice: bool) -> Enum:
         """
@@ -86,7 +87,7 @@ class Auth(Enum):
         if self == Auth.IN_TRANSIT:
             if choice:
                 return Auth.ARRIVED
-            return Auth.FALSE
+            return Auth.CONFLICT
             
     def next(self, choice: bool) -> Enum:
         """
@@ -101,6 +102,8 @@ class Auth(Enum):
             return self.nextOfSG_IN(choice)
         if self == Auth.IN_TRANSIT:
             return self.nextOfIN_TRANSIT(choice)
+        if self == Auth.READY:
+            return self.nextOfREADY(choice)
 
 
     
