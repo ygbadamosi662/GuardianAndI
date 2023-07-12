@@ -6,7 +6,7 @@ from models.guard import Guard
 from models.registry import Registry
 from models.pick_and_drop import PickAndDrop
 from models import storage
-from global_variables import SCHOOL, GUARDIAN, STUDENT, GUARD, REGISTRY
+from global_variables import SCHOOL, GUARDIAN, STUDENT, GUARD, REGISTRY, PICK_AND_DROP
 
 def getSchoolResponse(school: School) -> dict:
     schoolObj = {}
@@ -107,5 +107,10 @@ def getListOfResponseObjects(modelType, models: list, pure: bool = False) -> lis
     if modelType == REGISTRY:
         for model in models:
             objList.append(getRegistryResponse(model))
+        return objList
+    
+    if modelType == PICK_AND_DROP:
+        for model in models:
+            objList.append(getPadResponse(model))
         return objList
     

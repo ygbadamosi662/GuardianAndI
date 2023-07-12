@@ -9,6 +9,8 @@ from repos.guardRepo import guard_repo, Guard
 from models.pick_and_drop import PickAndDrop
 from repos.pick_and_dropRepo import pad_repo
 from repos.registryRepo import registry_repo, Registry
+from Enums.auth_enum import Auth
+from Enums.action_enum import Action
 from models.student import Student
 from global_variables import GUARDIAN, SCHOOL, PICK_AND_DROP, REGISTRY, GUARD, STUDENT
 from Enums.tag_enum import Tag
@@ -221,4 +223,30 @@ class Utility():
 
         return self.session.scalar(exists_query)
 
+    def take_string_give_authEnum(self, filter: str) -> Auth:
+        if filter == 'conflict':
+            return Auth.CONFLICT
+        if filter == 'initiated':
+            return Auth.INITIATED
+        if filter == 'school in':
+            return Auth.SCHOOL_IN
+        if filter == 'school out':
+            return Auth.SCHOOL_OUT
+        if filter == 'sg in':
+            return Auth.SG_IN
+        if filter == 'sg out':
+            return Auth.SG_OUT
+        if filter == 'in transit':
+            return Auth.IN_TRANSIT
+        if filter == 'arrived':
+            return Auth.ARRIVED
+        if filter == 'ready':
+            return Auth.READY
+
+    def take_string_give_actionEnum(self, act: str) ->Action:
+        if act == 'drop':
+            return Action.DROP_OFF
+        if act == 'pick':
+            return Action.PICK_UP
+    
 util = Utility()  

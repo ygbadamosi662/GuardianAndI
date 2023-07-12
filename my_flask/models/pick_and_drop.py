@@ -24,10 +24,10 @@ class PickAndDrop(BaseModel, Subject):
     auth: Mapped[auth_enum.Auth]
     
     PAD_guard_id: Mapped[int] = mapped_column(ForeignKey("guards.guard_id"))
-    PAD_guard = relationship("Guard", foreign_keys=PAD_guard_id)
+    PAD_guard = relationship("Guard", foreign_keys=PAD_guard_id, backref="guard_PADs")
 
     PAD_registry_id: Mapped[int] = mapped_column(ForeignKey("registries.registry_id"))
-    PAD_registry = relationship("Registry", foreign_keys=PAD_registry_id)
+    PAD_registry = relationship("Registry", foreign_keys=PAD_registry_id, backref="registry_PADs")
 
     auth_provider_id: Mapped[int] = mapped_column(ForeignKey("guardians.guardian_id"), nullable=True)
     auth_provider = relationship("Guardian", back_populates="auths_provided")

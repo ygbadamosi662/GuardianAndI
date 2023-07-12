@@ -31,7 +31,7 @@ class Guard(BaseModel, Subject):
     guard_guardian_id: Mapped[int] = mapped_column(ForeignKey("guardians.guardian_id"))
     guard_guardian = relationship("Guardian", foreign_keys=guard_guardian_id)
 
-    guard_PADs = relationship("PickAndDrop", foreign_keys=id)
+    # guard_PADs = relationship("PickAndDrop", foreign_keys=id)
 
     __mapper_args__ = {
         "polymorphic_identity": "guard",

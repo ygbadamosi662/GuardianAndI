@@ -119,47 +119,48 @@ def studentReg():
 
         if payload['model'] == SCHOOL:
 
-            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
             school = util.getInstanceFromJwt()
+
             guardian = guardian_repo.findByEmail(studentData['user_email'])
+            # checks if guardian exists
+            if not guardian:
+                return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
             
+
             if school:
+                student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
                 student.student_school = school
                 util.persistModel(student)
                 student = student_repo.findByEmail(studentData['email'])
 
                 registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
                 util.persistModel(registry)
+
+                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
+                util.persistModel(guard)
+
             else:    
                 return {'message': 'something is wrong, school not set'}, 400
 
-            # check if guardian exists
-            if guardian:
-                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
-                util.persistModel(guard)
-            else:
-                return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
         
         if payload['model'] == GUARDIAN:
 
-            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
-
             # check if school exists
             school = school_repo.findByEmail(studentData['user_email'])
-            if school:
-                student.student_school = school
-                util.persistModel(student)
-
-                student = student_repo.findByEmail(studentData['email'])
-                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
-                util.persistModel(registry)
-            else:
+            if not school:
                 return {'message': 'School {} does not exist in our world'.format(studentData['user_email'])}, 400
             
             guardian = util.getInstanceFromJwt()
             if guardian:
+                student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
+
+                student.student_school = school
                 util.persistModel(student)
+
                 student = student_repo.findByEmail(studentData['email'])
+
+                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
+                util.persistModel(registry)
 
                 guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
                 util.persistModel(guard)

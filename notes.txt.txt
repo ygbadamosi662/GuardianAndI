@@ -2,3 +2,4 @@ add another tag, School_Guardian, for school bus implememtation
 a controller that implements the school bus context, to handle school bus pick and drop of students
 
 implement resolving CONFLICT
+implement a way to employ an auxilary_guardian and avenue for school to employ their school_guardians on our platform, provide data about such guardians so they can make informed decision on who they are employing as their war/student guardian, maybe we will need an employ table, to document guardians available for employments and guardians that are currently employed and who they are employed to 

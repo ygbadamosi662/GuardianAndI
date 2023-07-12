@@ -350,7 +350,7 @@ def shoo(id, yes_or_no):
 
 @pad_bp.route('/pad/<int:id>', methods=['GET'])
 @jwt_required(optional=False)
-def get_pads(id: int):
+def get_pad(id: int):
     payload = get_jwt_identity()
     if not id:
         return {'Message': 'Which pad?...id is not set'}, 400
@@ -380,8 +380,99 @@ def get_pads(id: int):
     util.closeSession()
 
     return jsonify(getPadResponse(pad)), 200
+
+@pad_bp.route('/pads/<string:filter>/', defaults={'page': 1, 'action': 'all'}, methods=['GET'])
+@pad_bp.route('/pads/<string:filter>/<int:page>/', defaults={'action': 'all'}, methods=['GET'])
+@pad_bp.route('/pads/<string:filter>/<int:page>/<string:action>', methods=['GET'])
+@jwt_required(optional=False)
+def get_pads(filter, page, action):
+    payload = get_jwt_identity()
+    
+    
+    # if guardian
+    if payload['model'] == GUARDIAN:
+        guardian = util.getInstanceFromJwt()
+
+        if action == 'all':
+            if filter == 'all':
+                pads = pad_repo.pageByGuardian(guardian, page)
+            
+            if filter == 'unsresolved':
+                pads = pad_repo.pageUnresolvedPadByGuardian(guardian, page)
+            
+            if filter == 'resolved':
+                pads = pad_repo.pageByGuardianAndAuth(guardian, Auth.ARRIVED, page)
+            
+            if filter == 'ongoing':
+                pads = pad_repo.pageOngoingPadByGuardian(guardian, page)
+                print(pads)
+            
+            if (filter != 'all') and (filter != 'unsresolved') and (filter != 'resolved') and (filter != 'ongoing'):
+                pads = pad_repo.pageByGuardianAndAuth(guardian, util.take_string_give_authEnum(filter), page)
         
+        if (action == 'drop') or (action == 'pick'):
+            app_action = util.take_string_give_actionEnum(action)
+            
+            if filter == 'all':
+                pads = pad_repo.pageByGuardianAndAction(guardian, app_action, page)
+            
+            if filter == 'unsresolved':
+                pads = pad_repo.pageUnresolvedPadByGuardianAndAction(guardian, app_action, page)
+            
+            if filter == 'resolved':
+                pads = pad_repo.pageByGuardianAndAuthAndAction(guardian, Auth.ARRIVED, app_action, page)
+            
+            if filter == 'ongoing':
+                pads = pad_repo.pageOngoingPadByGuardianAndAction(guardian, app_action, page)
+            
+            if (filter != 'all') and (filter != 'unsresolved') and (filter != 'resolved') and (filter != 'ongoing'):
+                pads = pad_repo.pageByGuardianAndAuthAndAction(guardian, util.take_string_give_authEnum(filter), app_action, page)
 
-    
 
+    # if school
+    if payload['model'] == SCHOOL:
+        school = util.getInstanceFromJwt()
+
+        if action == 'all':
+            if filter == 'all':
+                pads = pad_repo.pageBySchool(school, page)
+            
+            if filter == 'unsresolved':
+                pads = pad_repo.pageUnresolvedPadBySchool(school, page)
+            
+            if filter == 'resolved':
+                pads = pad_repo.pageBySchoolAndAuth(school, Auth.ARRIVED, page)
+            
+            if filter == 'ongoing':
+                pads = pad_repo.pageOngoingPadBySchool(school, page)
+            
+            if (filter != 'all') and (filter != 'unsresolved') and (filter != 'resolved') and (filter != 'ongoing'):
+                app_auth = util.take_string_give_authEnum(filter)
+                if not app_auth:
+                    return {'Message': 'no filter set'}, 400
+                pads = pad_repo.pageBySchoolAndAuth(school, app_auth, page)
+        
+        if (action == 'drop') or (action == 'pick'):
+            app_action = util.take_string_give_actionEnum(action)
+            
+            if filter == 'all':
+                pads = pad_repo.pageBySchoolAndAction(school, app_action, page)
+            
+            if filter == 'unsresolved':
+                pads = pad_repo.pageUnresolvedPadBySchoolAndAction(school, app_action, page)
+            
+            if filter == 'resolved':
+                pads = pad_repo.pageBySchoolAndAuthAndAction(school, Auth.ARRIVED, app_action, page)
+            
+            if filter == 'ongoing':
+                pads = pad_repo.pageOngoingPadBySchoolAndAction(school, app_action, page)
+            
+            if (filter != 'all') and (filter != 'unsresolved') and (filter != 'resolved') and (filter != 'ongoing'):
+                app_auth = util.take_string_give_authEnum(filter)
+                if not app_auth:
+                    return {'Message': 'no filter set'}, 400
+                pads = pad_repo.pageByGuardianAndAuthAndAction(school, app_auth, app_action, page)
+
+    util.closeSession()
     
+    return jsonify(getListOfResponseObjects(PICK_AND_DROP, pads)), 200
