@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import String
+import uuid
 
 
 time = "%Y-%m-%dT%H:%M:%S.%f"
@@ -37,6 +38,7 @@ class BaseModel:
                 if key != "__class__":
                     setattr(self, key, value)
         else:
+            self.id = str(uuid.uuid4())
             self.created_at = datetime.utcnow()
             self.updated_at = datetime.utcnow()
 
