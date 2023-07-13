@@ -2,6 +2,7 @@
 from models import storage
 from sqlalchemy import exists
 from typing import Union, List
+from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import get_jwt_identity
 from repos.guardianRepo import guardian_repo, Guardian
 from repos.schoolRepo import school_repo, School
@@ -242,6 +243,8 @@ class Utility():
             return Auth.ARRIVED
         if filter == 'ready':
             return Auth.READY
+        if filter == 'resolved':
+            return Auth.ARRIVED
 
     def take_string_give_actionEnum(self, act: str) ->Action:
         if act == 'drop':
@@ -249,4 +252,13 @@ class Utility():
         if act == 'pick':
             return Action.PICK_UP
     
+    def get_student_guardians(self, student: Student, tag: Tag, status: Status) -> List[Guardian]:
+        try:
+            if student and tag and status:
+                guards = guard_repo.findByStudentAndStatusAndTag(student, status, tag)
+
+                return [guard.guard_guardian for guard in guards]
+        except SQLAlchemyError as err:
+            print(err._message())
+
 util = Utility()  

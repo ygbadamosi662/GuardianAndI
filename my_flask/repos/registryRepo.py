@@ -33,10 +33,10 @@ class RegistryRepo:
             except SQLAlchemyError:
                 return
             
-    def findByStudentAndSchool(self, student: Student, school: School) -> List[Registry]:
+    def findByStudentAndSchool(self, student: Student, school: School) -> Registry:
         try:
             registries = self.session.query(Registry).filter(and_(Registry.registry_student == student, 
-                                                                Registry.registry_school == school)).all()
+                                                                Registry.registry_school == school)).first()
             return registries
         except SQLAlchemyError:
             return

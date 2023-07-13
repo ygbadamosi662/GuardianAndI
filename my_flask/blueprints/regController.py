@@ -7,6 +7,7 @@ from models.guardian import Guardian
 from models.student import Student
 from models.registry import Registry
 from models.guard import Guard
+from sqlalchemy.exc import SQLAlchemyError
 # from models.notification import Notification
 from utility import util
 from global_variables import SCHOOL, GUARDIAN, STUDENT
@@ -78,11 +79,17 @@ def schoolReg():
                         city=schoolData['city'])
         
         util.persistModel(school)
-        util.closeSession()
-
+        
         return jsonify(school_schema.dump(schoolData)), 200
+    
     except ValidationError as err:
-        return {'errors': err.messages}, 400
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
     
 @reg_bp.route('/reg/guardian', methods=['POST'])
 def guardianReg():  
@@ -100,8 +107,15 @@ def guardianReg():
         util.closeSession()
 
         return jsonify(guardian_schema.dump(guardianData)), 200
+    
     except ValidationError as err:
-        return {'errors': err.messages}, 400
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
     
 
 @reg_bp.route('/reg/student', methods=['POST'])
@@ -167,8 +181,13 @@ def studentReg():
             else:
                 return {'message': 'something is wrong, guardian not set'}, 400    
         
-        util.closeSession()
-
         return jsonify(student_schema.dump(studentData)), 200
+
     except ValidationError as err:
-        return {'errors': err.messages}, 400
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from response_object import getListOfResponseObjects
-from models import storage
+from sqlalchemy.exc import SQLAlchemyError
 from global_variables import GUARD, GUARDIAN
 from utility import util
 from Enums.status_enum import Status
@@ -18,49 +18,64 @@ guard_repo = GuardRepo()
 @guardian_bp.route('/get/students/<tag>/<int:page>', methods=['GET'])
 @jwt_required(optional=False)
 def guardianGetsStudents(tag, page):
-    payload = get_jwt_identity()
+    try:
+        payload = get_jwt_identity()
 
-    if payload['model'] != GUARDIAN:
-        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
+        if payload['model'] != GUARDIAN:
+            return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
+
+        guardian = util.getInstanceFromJwt()
+        if not guardian:
+            return {'mesaage': 'ERROR ERROR!'}, 400
+
+        realTag = {}
+
+        if tag == 'aux':
+            realTag = Tag.AUXILLARY_GUARDIAN
+
+        if tag == 'super':
+            realTag = Tag.SUPER_GUARDIAN
+
+        guards = guard_repo.pageByGuardianAndStatusAndTag(guardian, Status.ACTIVE, realTag, page)
+        
+        return jsonify(getListOfResponseObjects(GUARD, guards, True)), 200
     
-    guardian = util.getInstanceFromJwt()
-    if not guardian:
-        return {'mesaage': 'ERROR ERROR!'}, 400
-    
-    realTag = {}
-
-    if tag == 'aux':
-        realTag = Tag.AUXILLARY_GUARDIAN
-
-    if tag == 'super':
-        realTag = Tag.SUPER_GUARDIAN
-
-    guards = guard_repo.pageByGuardianAndStatusAndTag(guardian, Status.ACTIVE, realTag, page)
-    util.closeSession()
-
-    return jsonify(getListOfResponseObjects(GUARD, guards, True)), 200
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
 
 @guardian_bp.route('/get/guards/history/<status>/<int:page>', methods=['GET'])
 @jwt_required(optional=False)
 def getGuardianGuardHistory(status, page):
-    payload = get_jwt_identity()
-    # checks if user is permitted
-    if payload['model'] != GUARDIAN:
-        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
-    
-    guardian = util.getInstanceFromJwt()
-    if not guardian:
-        return {'message': 'Error Error!'}, 400
-    
-    realStatus = {}
-    if status == 'active':
-        realStatus = Status.ACTIVE
+    try:
+        payload = get_jwt_identity()
+        # checks if user is permitted
+        if payload['model'] != GUARDIAN:
+            return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
 
-    if status == 'inactive':
-        realStatus = Status.INACTIVE    
-    
-    guards = guard_repo.pageByGuardianAndStatus(guardian, realStatus, page)
-    util.closeSession()
+        guardian = util.getInstanceFromJwt()
+        if not guardian:
+            return {'message': 'Error Error!'}, 400
 
-    return jsonify(getListOfResponseObjects(GUARD, guards, True)), 200
+        realStatus = {}
+        if status == 'active':
+            realStatus = Status.ACTIVE
+
+        if status == 'inactive':
+            realStatus = Status.INACTIVE    
+
+        guards = guard_repo.pageByGuardianAndStatus(guardian, realStatus, page)
+        util.closeSession()
+
+        return jsonify(getListOfResponseObjects(GUARD, guards, True)), 200
+    
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
 

@@ -52,3 +52,11 @@ class PadSchema(Schema):
     action = fields.String(required=True)
 
 pad_schema = PadSchema()
+
+class StudentPadSchema(Schema):
+    student_email = fields.Email(required=True)
+    filter = fields.String(required=True)
+    action = fields.String(required=True)
+    page = fields.Number(required=True)
+
+student_pad_schema = StudentPadSchema()

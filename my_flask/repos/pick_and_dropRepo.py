@@ -29,7 +29,8 @@ class PickAndDropRepo:
     # byRegistry  
     def findOngoingPadByRegistry(self, reg: Registry) -> PickAndDrop:
         if reg:
-            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry == reg, ~PickAndDrop.auth.in_([Auth.ARRIVED, Auth.CONFLICT, Auth.SCHOOL_OUT, Auth.SG_OUT]))
+            print(reg)
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry.has(id=reg.id), ~PickAndDrop.auth.in_([Auth.ARRIVED, Auth.CONFLICT, Auth.SCHOOL_OUT, Auth.SG_OUT]))
 
             return query.first()
         
@@ -39,6 +40,14 @@ class PickAndDropRepo:
             offset = (page - 1) * page_size
             query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry == registry, 
                                                             PickAndDrop.auth == auth).limit(page_size).offset(offset)
+            return query.all()
+        
+    def pageByRegistry(self, registry: Registry, page: int) -> List[PickAndDrop]:
+        if registry and page:
+            page_size = 10 
+            offset = (page - 1) * page_size
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry == registry).limit(page_size).offset(offset)
+
             return query.all()
         
     def pageUnresolvedPadByRegistry(self, registry: Registry, page: int) -> List[PickAndDrop]:
@@ -63,12 +72,19 @@ class PickAndDropRepo:
             offset = (page - 1) * page_size
             query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry == registry, PickAndDrop.action == action, PickAndDrop.auth == auth).limit(page_size).offset(offset)
             return query.all()
+        
+    def pageByRegistryAndAction(self, registry: Registry, action: Action, page: int) -> List[PickAndDrop]:
+        if registry and action and page:
+            page_size = 10 
+            offset = (page - 1) * page_size
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry == registry, PickAndDrop.action == action).limit(page_size).offset(offset)
+            return query.all()
 
 
     # byGuard
     def findOngoingPadByGuard(self, guard: Guard) -> PickAndDrop:
         if guard:
-            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard == guard, PickAndDrop.auth != Auth.ARRIVED, PickAndDrop.auth != Auth.CONFLICT, PickAndDrop.auth != Auth.SCHOOL_OUT, PickAndDrop.auth != Auth.SG_OUT)
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard.has(id=guard.id), PickAndDrop.auth != Auth.ARRIVED, PickAndDrop.auth != Auth.CONFLICT, PickAndDrop.auth != Auth.SCHOOL_OUT, PickAndDrop.auth != Auth.SG_OUT)
 
             return query.first()
         
@@ -78,6 +94,13 @@ class PickAndDropRepo:
             offset = (page - 1) * page_size
             query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard == guard, 
                                                             PickAndDrop.auth == auth).limit(page_size).offset(offset)
+            return query.all()
+        
+    def pageByGuard(self, guard: Guard, page: int) -> List[PickAndDrop]:
+        if guard and page:
+            page_size = 10 
+            offset = (page - 1) * page_size
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard == guard).limit(page_size).offset(offset)
             return query.all()
         
     def pageUnresolvedPadByGuard(self, guard: Guard, page: int) -> List[PickAndDrop]:
@@ -101,6 +124,13 @@ class PickAndDropRepo:
             page_size = 10 
             offset = (page - 1) * page_size
             query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard == guard, PickAndDrop.action == action, PickAndDrop.auth == auth).limit(page_size).offset(offset)
+            return query.all()
+        
+    def pageByGuardAndAction(self, guard: Guard, action: Action, page: int) -> List[PickAndDrop]:
+        if guard and action and page:
+            page_size = 10 
+            offset = (page - 1) * page_size
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_guard == guard, PickAndDrop.action == action).limit(page_size).offset(offset)
             return query.all()
 
 
@@ -299,5 +329,10 @@ class PickAndDropRepo:
 
             return query.all()
 
+    def findOngoingPadByStudent(self, student: Student) -> PickAndDrop:
+        if student:
+            query = self.session.query(PickAndDrop).filter(PickAndDrop.PAD_registry.has(Registry.registry_student == student), ~PickAndDrop.auth.in_([Auth.ARRIVED, Auth.CONFLICT, Auth.SCHOOL_OUT, Auth.SG_OUT]))
+
+            return query.first()
 
 pad_repo = PickAndDropRepo()
