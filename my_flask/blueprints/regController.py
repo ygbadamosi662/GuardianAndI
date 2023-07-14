@@ -1,22 +1,24 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import fields, Schema, ValidationError
-from models import storage
+from services.note_service import note_service
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
 from models.registry import Registry
 from models.guard import Guard
 from sqlalchemy.exc import SQLAlchemyError
+# from sqlalchemy import exc as sa_exc
 # from models.notification import Notification
 from utility import util
-from global_variables import SCHOOL, GUARDIAN, STUDENT
+from global_variables import SCHOOL, GUARDIAN, STUDENT, AUTHORIZATION, CONFIRMATION
 from repos.studentRepo import StudentRepo
 from repos.guardianRepo import GuardianRepo
 from repos.schoolRepo import SchoolRepo
 from Enums.gender_enum import Gender
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
+from Enums.permit_enum import Permit
 
 
 reg_bp = Blueprint('reg', __name__)
@@ -116,7 +118,6 @@ def guardianReg():
         return {'Message': err.args[0]}, 400
     finally:
         util.closeSession()
-    
 
 @reg_bp.route('/reg/student', methods=['POST'])
 @jwt_required()
@@ -127,59 +128,71 @@ def studentReg():
 
         studentData = student_schema.load(data)
 
-        # checks table integrity
-        if util.validate_table_integrity(studentData['email'], STUDENT):
-            return {'Message': '{} already exists'.format(studentData['email'])}, 400
-
         if payload['model'] == SCHOOL:
 
             school = util.getInstanceFromJwt()
 
-            guardian = guardian_repo.findByEmail(studentData['user_email'])
-            # checks if guardian exists
-            if not guardian:
+            if util.validate_table_integrity(studentData['email'], STUDENT):
+                student = student_repo.findByEmail(studentData['email'])
+                if student.student_school:
+                    if student.student_school == school:
+                        return {'Message': 'Student is alraedy registered to your school'}, 400
+
+                return {'Message': 'Student {} already exists and have an active registration'.format(studentData['email'])}, 400
+
+            # checks if guardian exist
+            if util.validate_table_integrity(studentData['user_email'], GUARDIAN) == False:
                 return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
             
+            guardian = guardian_repo.findByEmail(studentData['user_email'])
+           
+            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
+            # student.student_school = school
+            util.persistModel(student)
+            student = student_repo.findByEmail(studentData['email'])
 
-            if school:
-                student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
-                student.student_school = school
-                util.persistModel(student)
-                student = student_repo.findByEmail(studentData['email'])
+            registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE_GYELLOW)
+            util.persistModel(registry)
+            
+            # We are assuming here the school has done its due diligence on the guardian information they have provided
+            guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
+            util.persistModel(guard)
 
-                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
-                util.persistModel(registry)
-
-                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
-                util.persistModel(guard)
-
-            else:    
-                return {'message': 'something is wrong, school not set'}, 400
+            # notify the guardian
+            note_service.create_noti(school, guardian, registry, Permit.READ_AND_WRITE, AUTHORIZATION)
+            note_service.create_noti(school, guardian, guard, Permit.READ_AND_WRITE, CONFIRMATION)
 
         
         if payload['model'] == GUARDIAN:
 
+            if util.validate_table_integrity(studentData['email'], STUDENT):
+                if util.student_validate_guardian(student_repo.findByEmail(studentData['email']), util.getInstanceFromJwt()):
+                    return {'Message': 'Student already registere and linked to you'}, 400
+                
+                return {'Message': 'Student exists already'}, 400
+
             # check if school exists
-            school = school_repo.findByEmail(studentData['user_email'])
-            if not school:
+            if util.validate_table_integrity(studentData['user_email'], SCHOOL) == False:
                 return {'message': 'School {} does not exist in our world'.format(studentData['user_email'])}, 400
+
+            school = school_repo.findByEmail(studentData['user_email'])
             
             guardian = util.getInstanceFromJwt()
-            if guardian:
-                student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
+           
+            student = Student(first_name=studentData['first_name'], last_name=studentData['last_name'], email=studentData['email'], gender=studentData['gender'], dob=studentData['dob'], grade=studentData['grade'])
+            student.student_school = school
+            util.persistModel(student)
+            student = student_repo.findByEmail(studentData['email'])
 
-                student.student_school = school
-                util.persistModel(student)
+            registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE_SYELLOW)
+            util.persistModel(registry)
 
-                student = student_repo.findByEmail(studentData['email'])
+            guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
+            util.persistModel(guard)
 
-                registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE)
-                util.persistModel(registry)
-
-                guard = Guard(guard_student=student, guard_guardian=guardian, tag=Tag.SUPER_GUARDIAN, status=Status.ACTIVE)
-                util.persistModel(guard)
-            else:
-                return {'message': 'something is wrong, guardian not set'}, 400    
+            # notify the school
+            note_service.create_noti(guardian, school, registry, Permit.READ_AND_WRITE, CONFIRMATION)
+       
         
         return jsonify(student_schema.dump(studentData)), 200
 

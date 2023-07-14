@@ -47,8 +47,7 @@ class School(BaseModel, User):
         super().__init__(*args, **kwargs)
 
     def __setattr__(self, name, value):
-        """sets a password with md5 encryption"""
+        """sets a password with bcrypt encryption"""
         if name == "password":
             value = globalBcrypt.hashpw(value.encode('utf-8'), globalBcrypt.gensalt())
-            # value = md5(value.encode()).hexdigest()
         super().__setattr__(name, value)

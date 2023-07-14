@@ -107,5 +107,7 @@ class RegistryRepo:
         except SQLAlchemyError:
             return
 
+    def findById(self, id: int) -> Registry:
+        return self.session.query(Registry).filter(Registry.id == id).first()
 
 registry_repo = RegistryRepo()          

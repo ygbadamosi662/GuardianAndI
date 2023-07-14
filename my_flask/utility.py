@@ -17,7 +17,7 @@ from global_variables import GUARDIAN, SCHOOL, PICK_AND_DROP, REGISTRY, GUARD, S
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 
-class Utility():
+class Utility:
     """
     Defines Utility class, just for utility functions
     """
@@ -66,7 +66,6 @@ class Utility():
             andIsActive: if True, function will return True if guard is Active, 
                          returns False otherwise(defaults to False if not set)
         """
-        self.discard()
         guards = self.guardRepo.findByStudent(student)
         returnee = False
         
@@ -150,9 +149,7 @@ class Utility():
             if pad:
                 if keep:
                     self.keep_it(pad)
-                    if pad:
-                        return True
-                    return False
+                    return True
                 
                 return pad
             
@@ -163,14 +160,11 @@ class Utility():
             self.monitor('check_for_active_registry_pad')
 
         if guard:
-            pad = pad_repo.findOngoingPadByRegistry(guard)
+            pad = pad_repo.findOngoingPadByGuard(guard)
             if pad:
                 if keep:
                     self.keep['check_for_active_registry_pad'] = pad
-                    if pad:
-                        return True
-                    return False
-                
+                    return True
                 return pad
             
             return False
@@ -200,16 +194,76 @@ class Utility():
                 return True
             
         return False
+    
+    def student_validate_guardian(self, student: Student, guardian: Guardian, who: str = 'all') -> bool:
+        if not student or not guardian:
+            return False
+        
+        if who == 'all':
+            guardians = self.get_active_student_guardians(student)
+
+        if who == 'super':
+            guardians = self.get_active_student_guardians(student, Tag.SUPER_GUARDIAN)
+
+        if who == 'school':
+             guardians = self.get_active_student_guardians(student, Tag.SCHOOL_GUARDIAN)   
+
+        if who == 'aux':
+             guardians = self.get_active_student_guardians(student, Tag.AUXILLARY_GUARDIAN)
+
+        if who == 'auxs':
+            guardians = self.get_active_student_guardians(student, Tag.SCHOOL_GUARDIAN) + self.get_active_student_guardians(student, Tag.AUXILLARY_GUARDIAN)
+
+        for pad_guardian in guardians:
+            if pad_guardian == guardian:
+                return True
+            
+        return False
 
     def get_pad_guardians(self, pad: PickAndDrop, tag: Tag = None) -> List[Guardian]:
-        
+        """
+        gets all active guardians involved in the provided pad
+        that includes all super guardians and the auxillary guardians that initaites the pad(if any)
+        """
         if pad:
             if tag == None:
                 guards = guard_repo.findByStudentAndStatus(pad.PAD_guard.guard_student, Status.ACTIVE)
                 if guards:
-                    return [guard.guard_guardian for guard in guards]
+                    print(guards)
+                    for guard in guards:
+                        if (guard.tag == Tag.AUXILLARY_GUARDIAN) or (guard.tag == Tag.SCHOOL_GUARDIAN):
+                            if pad.PAD_guard != guard:
+                                guards.remove(guard)
+                    print(guards)
+                return [guard.guard_guardian for guard in guards]
             
             guards = guard_repo.findByStudentAndStatusAndTag(pad.PAD_guard.guard_student, Status.ACTIVE, tag)
+
+            if (tag == Tag.AUXILLARY_GUARDIAN) or  (tag == Tag.SCHOOL_GUARDIAN):
+                if guards:
+                        for guard in guards:
+                            if (guard.tag == Tag.AUXILLARY_GUARDIAN) or (guard.tag == Tag.SCHOOL_GUARDIAN):
+                                if pad.PAD_guard != guard:
+                                    guards.remove(guard)
+            
+            return [guard.guard_guardian for guard in guards]
+        
+    def get_pad_student_or_school(self, pad: PickAndDrop, model: str) -> Union[Student, School]:
+        if pad:
+            if model == STUDENT:
+                return pad.PAD_registry.registry_student
+            if model == SCHOOL:
+                return pad.PAD_registry.registry_school
+
+    def get_active_student_guardians(self, student: Guardian, tag: Tag = None) -> List[Guardian]:
+        
+        if student:
+            if tag == None:
+                guards = guard_repo.findByStudentAndStatus(student, Status.ACTIVE)
+                if guards:
+                    return [guard.guard_guardian for guard in guards]
+            
+            guards = guard_repo.findByStudentAndStatusAndTag(student, Status.ACTIVE, tag)
             return [guard.guard_guardian for guard in guards]
         
     def validate_table_integrity(self, email: str, model: str) -> bool:

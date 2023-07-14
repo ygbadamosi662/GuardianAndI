@@ -57,7 +57,7 @@ class Auth(Enum):
         if self == Auth.SCHOOL_IN:
             if choice:
                 return Auth.SG_IN
-            return Auth.SCHOOL_OUT
+            return Auth.SG_OUT
         
     def nextOfSG_IN(self, choice: bool) -> Enum:
         """

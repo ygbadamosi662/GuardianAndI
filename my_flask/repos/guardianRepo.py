@@ -15,6 +15,7 @@ class GuardianRepo:
     def __init__(self):
         self.session = storage.get_session()
 
+
     def findByEmail(self, email):
         if email:
             try:

@@ -5,6 +5,7 @@ from blueprints.studentController import student_bp
 from blueprints.schoolController import school_bp
 from blueprints.guardianController import guardian_bp
 from blueprints.pick_and_dropController import pad_bp
+from blueprints.notiController import noti_bp
 from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager
 from config import Config
@@ -28,6 +29,7 @@ app.register_blueprint(student_bp, url_prefix=path_prefix+'/student')
 app.register_blueprint(school_bp, url_prefix=path_prefix+'/school')
 app.register_blueprint(guardian_bp, url_prefix=path_prefix+'/guardian')
 app.register_blueprint(pad_bp, url_prefix=path_prefix+'/pad')
+app.register_blueprint(noti_bp, url_prefix=path_prefix+'/noti')
 
 # with app.app_context():
 #     secret = current_app.config.get('JWT_SECRET_KEY')

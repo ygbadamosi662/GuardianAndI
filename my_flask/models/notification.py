@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 """Defines the Notification class."""
 from models.base_model import Base, BaseModel
-# from models.userBase import User
-from sqlalchemy import Column, String, Integer, ForeignKey, Enum
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-
-from Enums import permit_enum, note_enum
+from Enums import permit_enum, activity_enum
 
 
 class Notification(BaseModel, Base):
@@ -22,8 +20,9 @@ class Notification(BaseModel, Base):
     """
     __tablename__ = "notifications"
     id: Mapped[int] = mapped_column(primary_key=True, name="notification_id")
-    note: Mapped[note_enum.Note]
+    activity: Mapped[activity_enum.Activity]
     permit: Mapped[permit_enum.Permit]
+    note: Mapped[str] = mapped_column(String(255), nullable=True)
     
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     note_sender = relationship("User", foreign_keys=sender_id,  back_populates="sender_notes")

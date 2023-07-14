@@ -2,16 +2,19 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
+from services.note_service import note_service
 from schemas import pad_schema
 from schemas import student_pad_schema
 from models.pick_and_drop import PickAndDrop
 from response_object import getListOfResponseObjects, getPadResponse
-from global_variables import GUARD, GUARDIAN, SCHOOL, PICK_AND_DROP, REGISTRY, STUDENT
+from global_variables import GUARDIAN, SCHOOL, PICK_AND_DROP, STUDENT, AUTHORIZATION, CONFIRMATION, CONFLICT
 from utility import util
 from Enums.status_enum import Status
 from Enums.auth_enum import Auth
 from Enums.action_enum import Action
 from Enums.tag_enum import Tag
+from Enums.activity_enum import Activity
+from Enums.permit_enum import Permit
 from repos.guardRepo import guard_repo
 from repos.notificationRepo import note_repo
 from repos.pick_and_dropRepo import pad_repo
@@ -34,12 +37,12 @@ def initiateDrop():
         data = request.get_json()
         padData = pad_schema.load(data)
 
-        student = student_repo.findByEmail(padData['student_email'])
-
         # checks if student exist
-        if not student:
+        if util.validate_table_integrity(padData['student_email'], STUDENT) == False:
             return {'message': 'student does not exist'}, 400
         
+        student = student_repo.findByEmail(padData['student_email'])
+
         guardian = util.getInstanceFromJwt()
         
         guard = guard_repo.findByStudentAndGuardianAndStatus(student, guardian, Status.ACTIVE)
@@ -58,18 +61,29 @@ def initiateDrop():
         if util.check_for_active_registry_pad(registry, True):
             return {'message': 'Student already in play'}, 400
         
-        actor = {}
+        act = {}
         if padData['action'] == 'pick':
-            actor = Action.PICK_UP
+            act = Action.PICK_UP
             
         if padData['action'] == 'drop':
-            actor = Action.DROP_OFF
+            act = Action.DROP_OFF
         
-        pad = PickAndDrop(PAD_registry=registry, PAD_guard= guard, action=actor, auth=Auth.initiate())
+        pad = PickAndDrop(PAD_registry=registry, PAD_guard= guard, action=act, auth=Auth.initiate())
         
         util.persistModel(pad)
+        saved_pad = pad_repo.findOngoingPadByGuard(guard)
+
+        # notify school
+        note_service.create_noti(guardian, registry.registry_school, saved_pad, Permit.READ_AND_WRITE, AUTHORIZATION)
+
+        # notify super guardians
+        sups = util.get_student_guardians(student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
+        for sup in sups:
+            if sup != guardian:
+                note_service.create_noti(guardian, sup, saved_pad, Permit.READONLY)
         
-        return jsonify(getPadResponse(pad)), 200
+        return jsonify(getPadResponse(saved_pad)), 200
+    
     except ValidationError as err:
         return {'message': err.args[0]}, 400
     except TypeError as err:
@@ -119,6 +133,19 @@ def school_yes_or_no(id, yes_or_no):
 
 
         util.persistModel(pad)
+
+        # notify the guardians accordinly
+        guardians = util.get_pad_guardians(pad)
+        for g in guardians:
+            if pad.auth == Auth.SCHOOL_IN:
+                if util.student_validate_guardian(pad.PAD_guard.guard_student, g, 'super'):
+                    note_service.create_noti(school, g, pad, Permit.READ_AND_WRITE, AUTHORIZATION)
+
+                if util.student_validate_guardian(pad.PAD_guard.guard_student, g, 'auxs'):
+                    note_service.create_noti(school, g, pad, Permit.READONLY)
+
+            if pad.auth == Auth.SCHOOL_OUT:
+                note_service.create_noti(school, g, pad, Permit.READONLY)
         
         return jsonify(getPadResponse(pad)), 200
     
@@ -158,38 +185,72 @@ def guardian_yes_or_no(id, yes_or_no):
             if pad.auth_provider == guardian:
                 pad.auth = Auth.SG_OUT
                 util.persistModel(pad)
-                util.closeSession()
+                
                 return jsonify(getPadResponse(pad)), 200
 
             if pad.auth_provider != guardian:
-                pad.auth = pad.auth.next(False)
-                util.persistModel(pad)
-                util.closeSession()
+                # pad.auth = pad.auth.next(False)
+                # util.persistModel(pad)
+                
                 # when notification is implemented an alarm otification should be use here
                 return {
-                    'Message': 'Conflicting AUTHORIZATION',
+                    'Message': 'We already have the required authorization',
                     'pad': jsonify(getPadResponse(pad))
                     }, 400
 
         if yes_or_no == 'yes':
-            if pad.auth == Auth.SG_IN:
-                name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
-
-                return {'message': 'We already have the required auth'+
+            if (pad.auth == Auth.SG_IN) or (pad.auth == Auth.SG_OUT):
+                if pad.auth_provider == guardian:
+                    if pad.auth == Auth.SG_IN:
+                        name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
+                        return {'message': 'We already have the required authorization'+
                         ' from {}, thank you'.format(name)}, 400
+                    
+                    if pad.auth == Auth.SG_OUT:
+                        pad.auth = Auth.SG_IN
 
-            pad.auth = pad.auth.next(True)
-            pad.auth_provider = guardian
+                if pad.auth_provider != guardian:
+                    name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
+
+                    return {'message': 'We already have the required authorization'+
+                        ' from {}, thank you'.format(name)}, 400
+            
+            if pad.auth == Auth.SCHOOL_IN:
+                pad.auth = pad.auth.next(True)
+                pad.auth_provider = guardian
 
         if yes_or_no == 'no':
-            if pad.auth == Auth.SG_OUT:
-                name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
-                return {'message': 'We already have the required auth '+
-                        'from {}, thank you'.format(name)}, 400
-            pad.auth == Auth.SG_OUT
-            pad.auth_provider = guardian
+            if (pad.auth == Auth.SG_OUT) or (pad.auth == Auth.SG_IN):
+                if pad.auth_provider == guardian:
+                    if pad.auth == Auth.SG_OUT:
+                        return {'message': 'We already have the required authorization'+
+                        ' from {}, thank you'.format(name)}, 400
+                    
+                    if pad.auth == Auth.SG_IN:
+                        pad.auth = Auth.SG_OUT
+
+                if pad.auth_provider != guardian:
+                    name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
+                    return {'message': 'We already have the required authorization '+
+                            'from {}, thank you'.format(name)}, 400
+            
+            if pad.auth == Auth.SCHOOL_IN:
+                pad.auth == Auth.SG_OUT
+                pad.auth_provider = guardian
 
         util.persistModel(pad)
+
+        # notify guardianss
+        guardians = util.get_pad_guardians(pad)
+        for g in guardians:
+            if util.pad_validate_guardian(pad, g, 'auxs'):
+                note_service.create_noti(guardian, g, pad, Permit.READ_AND_WRITE, CONFIRMATION)
+
+            if (util.pad_validate_guardian(pad, g, 'super')) and (g != guardian):
+                note_service.create_noti(guardian, g, pad, Permit.READONLY)
+
+        # notify school
+        note_service.create_noti(guardian, util.get_pad_student_or_school(pad, SCHOOL), pad, Permit.READONLY)
 
         return jsonify(getPadResponse(pad)), 200
     
@@ -200,95 +261,84 @@ def guardian_yes_or_no(id, yes_or_no):
     finally:
         util.closeSession()
 
-@pad_bp.route('/school/pick/ready/<int:id>/<string:yes_or_no>', methods=['GET'])
+@pad_bp.route('/user/ready/<int:id>/<string:yes_or_no>', methods=['GET'])
 @jwt_required(optional=False)
-def pick_up_ready(id, yes_or_no):
+def ready(id, yes_or_no):
     try:
-        payload = get_jwt_identity()
-        # checks credentials
-        if payload['model'] != SCHOOL:
-            return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
-
         pad = pad_repo.findById(id)
         # checks if pad exists
         if not pad:
             return {'Message': 'PAD does not exist'}, 400
-
-        school = util.getInstanceFromJwt()
-
-        if util.pad_validate_school(pad, school) == False:
-            return {'Message': 'Invalid Credentials'}, 400
-
-        # checks pad action
-        if pad.action != Action.PICK_UP:
-            return {'Message': 'Wrong address, this end-point serves only PICK UPS'}, 400
-
-        # checks authorization
+        
         if pad.auth != Auth.SG_IN:
-            return {'Message': 'PAD does not have the proper Authorization'}, 400
+            return {'Message': 'Invalid Authorization'}, 400
+        
+        payload = get_jwt_identity()
+        
+        if pad.action == Action.PICK_UP:
+            # checks credentials
+            if payload['model'] != SCHOOL:
+                return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
+            
+            school = util.getInstanceFromJwt()
 
-        # READY if yes
-        if yes_or_no == 'yes':
-            pad.auth = pad.auth.nextOfSG_IN(True)
+            if util.pad_validate_school(pad, school) == False:
+                return {'Message': 'Invalid Credentials'}, 400
 
-        # CONFLICT if no
-        if yes_or_no == 'no':
-            pad.auth = pad.auth.nextOfSG_IN(False)
+            # READY if yes
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.nextOfSG_IN(True)
+
+            # CONFLICT if no
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.nextOfSG_IN(False)
+
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if pad.auth != Auth.CONFLICT:
+                    note_service.create_noti(school, g, pad, Permit.READONLY)
+                if pad.auth == Auth.CONFLICT:
+                    note_service.create_noti(school, g, pad, Permit.READONLY, CONFLICT)
+        
+        if pad.action == Action.DROP_OFF:
+            # checks credentials
+            if payload['model'] != GUARDIAN:
+                return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
+            
+            guardian = util.getInstanceFromJwt()
+
+            if util.pad_validate_guardian(pad, guardian, 'super') == False:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            
+            # READY if yes
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.nextOfSG_IN(True)
+
+            # CONFLICT if no
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.nextOfSG_IN(False)
+
+            # notify school
+            school = util.get_pad_student_or_school(pad, SCHOOL)
+            if school:
+                if pad.auth != Auth.CONFLICT:
+                    note_service.create_noti(guardian, school, pad, Permit.READONLY)
+                if pad.auth == Auth.CONFLICT:
+                    note_service.create_noti(guardian, school, pad, Permit.READONLY, CONFLICT)
+
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if g != guardian:
+                    if pad.auth != Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY)
+                    if pad.auth == Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY, CONFLICT)
 
         util.persistModel(pad)
         
-        return jsonify(getPadResponse(pad)), 200
-    
-    except TypeError as err:
-        return {'Message': err.args[0]}, 400
-    except SQLAlchemyError as err:
-        return {'Message': err.args[0]}, 400
-    finally:
-        util.closeSession()
-
-@pad_bp.route('/guardian/drop/ready/<int:id>/<string:yes_or_no>', methods=['GET'])
-@jwt_required(optional=False)
-def drop_off_ready(id, yes_or_no):
-    try:
-        payload = get_jwt_identity()
-        # checks credentials
-        if payload['model'] != GUARDIAN:
-            print(payload['model'])
-            return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
-
-        pad = pad_repo.findById(id)
-        # checks if pad exists
-        if not pad:
-            return {'Message': 'PAD does not exist'}, 400
-
-        guardian = util.getInstanceFromJwt()
-
-        # checks credentials
-        if guardian != pad.PAD_guard.guard_guardian:
-            return {'Message': 'Inavalid Credentials'}, 400
-
-        # checks the guard validation
-        if util.validateGuard(pad.PAD_guard) == False:
-            return {'Message': 'Guard have been revoked'}, 400
-
-        # checks pad action
-        if pad.action != Action.DROP_OFF:
-            return {'Message': 'Wrong address, this end-point serves only DROP OFFs'}, 400
-
-        # checks authorization
-        if pad.auth != Auth.SG_IN:
-            return {'Message': 'PAD does not have the proper Authorization'}, 400
-
-        # READY if yes
-        if yes_or_no == 'yes':
-            pad.auth = pad.auth.nextOfSG_IN(True)
-
-        # CONFLICT if no
-        if yes_or_no == 'no':
-            pad.auth = pad.auth.nextOfSG_IN(False)
-    
-        util.persistModel(pad)
-
         return jsonify(getPadResponse(pad)), 200
     
     except TypeError as err:
@@ -305,11 +355,48 @@ def shoo(id, yes_or_no):
         payload = get_jwt_identity()
         pad = pad_repo.findById(id)
         # checks if pad exist
+
         if not pad:
             return {'Message': 'PAD does not exist'}, 400
+        
+        if pad.auth != Auth.READY:
+            return {'Message': 'Invalid Authorization'}, 400
+        
+        if pad.action == Action.PICK_UP:
+            if payload['model'] != SCHOOL:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            school = util.getInstanceFromJwt()
+            # checks school validity
+            if util.pad_validate_school(pad, school) == False:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.next(False)
 
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.next(True)
 
-        if payload['model'] == GUARDIAN:
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if util.pad_validate_guardian(pad, g, 'super'):
+                    if pad.auth == Auth.CONFLICT:
+                        note_service.create_noti(school, g, pad, Permit.READONLY, CONFLICT)
+                    if pad.auth != Auth.CONFLICT:
+                        note_service.create_noti(school, g, pad, Permit.READ_AND_WRITE, CONFIRMATION)
+
+                if util.pad_validate_guardian(pad, g, 'auxs'):
+                    if pad.auth == Auth.CONFLICT:
+                        note_service.create_noti(school, g, pad, Permit.READONLY, CONFLICT)
+                    if pad.auth != Auth.CONFLICT:
+                        note_service.create_noti(school, g, pad, Permit.READONLY)
+
+        
+        if pad.action == Action.DROP_OFF:
+            if payload['model'] != GUARDIAN:
+                return {'Message': 'Invalid Credentials'}, 400
+            
             guardian = util.getInstanceFromJwt()
             # checks guardian validity
             if util.pad_validate_guardian(pad, guardian) == False:
@@ -318,65 +405,113 @@ def shoo(id, yes_or_no):
             # checks super_guardian validity
             if util.pad_validate_guardian(pad, guardian, 'super') == False:
                 return {'Message': 'Above Your pay grade'}, 400
+            
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.next(False)
 
-            if pad.auth == Auth.READY:
-                msg = 'Guardian {} is READY, but is not in possesion of your ward yet'
-                guardian_name = guardian.first_name +" "+ guardian.last_name
-                return {'Message': msg.format(guardian_name)}, 400
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.next(True)
 
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if g != guardian:
+                    if pad.auth == Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY, CONFLICT)
+                    if pad.auth != Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY)
 
-            # checks if action is permitted
-            if pad.action != Action.PICK_UP:
-                return {'Message': 'Invalid Credentials'}, 400
-
-            if pad.auth == Auth.READY:
-                msg = 'Guardian {} is READY, but is not in possesion of your ward {} yet'
-                guardian_name = guardian
-                return {'Message': msg.format()}
-
-            user = guardian
-
-        if payload['model'] == SCHOOL:
-
-            school = util.getInstanceFromJwt()
-            # checks school validity
-            if util.pad_validate_school(pad, school) == False:
-                return {'Message': 'Invalid Credentials'}, 400
-
-            if pad.auth == Auth.READY:
-                msg = 'Guardian {} is READY, but is not in possesion of your student yet'
-                guardian_name = guardian.first_name +" "+ guardian.last_name
-                return {'Message': msg.format(guardian_name)}, 400
-
-            # checks if action is permitted
-            if pad.action != Action.DROP_OFF:
-                return {'Message': 'Invalid Credentials'}, 400
-
-            user = school
-
-        if pad.auth == Auth.CONFLICT:
-                return {'Message': 'There is a CONFLICT with the given PAD'}, 400
-
-
-        # checks authorization
-        if (pad.auth != Auth.IN_TRANSIT) and (pad.auth != Auth.ARRIVED):
-            return {'Message': 'PAD is not READY'}, 400
-
-        # if ARRIVED
-        if pad.auth == Auth.ARRIVED:
-            return {'Message': 'Student has ARRIVED already'}, 200
-
-        if yes_or_no == 'no':
-            pad.auth = pad.auth.next(False)
-            # raise an alarm
-
-        if yes_or_no == 'yes':
-            pad.auth = pad.auth.next(True)
-
+            # notify school
+            school = util.get_pad_student_or_school(pad, SCHOOL)
+            if school:
+                note_service.create_noti(guardian, school, pad, Permit.READ_AND_WRITE, CONFIRMATION)
+                
         util.persistModel(pad)
 
         return jsonify(getPadResponse(pad)), 200
     
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@pad_bp.route('/arrived/<int:id>/<string:yes_or_no>', methods=['GET'])
+@jwt_required(optional=False)
+def arrived_or_not(id, yes_or_no):
+    try:
+        payload = get_jwt_identity()
+        pad = pad_repo.findById(id)
+        # checks if pad exist
+        if not pad:
+            return {'Message': 'PAD does not exist'}, 400
+        
+        if pad.auth != Auth.IN_TRANSIT:
+            return {'Message': 'Invalid Authorization'}, 400
+        
+        if pad.action == Action.DROP_OFF:
+            if payload['model'] != SCHOOL:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            school = util.getInstanceFromJwt()
+            # checks school validity
+            if util.pad_validate_school(pad, school) == False:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.next(False)
+                
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.next(True)
+
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if pad.auth == Auth.CONFLICT:
+                    note_service.create_noti(school, g, pad, Permit.READONLY, CONFLICT)
+                if pad.auth != Auth.CONFLICT:
+                    note_service.create_noti(school, g, pad, Permit.READONLY)
+
+
+        
+        if pad.action == Action.PICK_UP:
+            if payload['model'] != GUARDIAN:
+                return {'Message': 'Invalid Credentials'}, 400
+            
+            guardian = util.getInstanceFromJwt()
+            # checks guardian validity
+            if util.pad_validate_guardian(pad, guardian) == False:
+                return {'Message': 'Invalid Credentials'}, 400
+
+            # checks super_guardian validity
+            if util.pad_validate_guardian(pad, guardian, 'super') == False:
+                return {'Message': 'Above Your pay grade'}, 400
+            
+            if yes_or_no == 'no':
+                pad.auth = pad.auth.next(False)
+
+            if yes_or_no == 'yes':
+                pad.auth = pad.auth.next(True)
+
+            # notify guardians
+            guardians = util.get_pad_guardians(pad)
+            for g in guardians:
+                if g != guardian:
+                    if pad.auth == Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY, CONFLICT)
+                    if pad.auth != Auth.CONFLICT:
+                        note_service.create_noti(guardian, g, pad, Permit.READONLY)
+
+            # notify school
+            school = util.get_pad_student_or_school(pad, SCHOOL)
+            if school:
+                note_service.create_noti(guardian, school, pad, Permit.READONLY)
+                
+        util.persistModel(pad)
+
+        return jsonify(getPadResponse(pad)), 200
+
     except TypeError as err:
         return {'Message': err.args[0]}, 400
     except SQLAlchemyError as err:

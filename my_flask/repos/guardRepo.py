@@ -136,6 +136,7 @@ class GuardRepo:
             except SQLAlchemyError:
                 return
             
-
+    def findById(self, id: int) -> Guard:
+        return self.session.query(Guard).filter(Guard.id == id).first()
 
 guard_repo = GuardRepo()          

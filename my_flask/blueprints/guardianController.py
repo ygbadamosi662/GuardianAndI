@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from response_object import getListOfResponseObjects
+from response_object import getListOfResponseObjects, getGuardResponse
 from sqlalchemy.exc import SQLAlchemyError
 from global_variables import GUARD, GUARDIAN
 from utility import util
 from Enums.status_enum import Status
 from Enums.tag_enum import Tag
+from Enums.permit_enum import Permit
+from services.note_service import note_service
 from repos.studentRepo import StudentRepo
 from repos.guardRepo import GuardRepo
 
@@ -79,3 +81,49 @@ def getGuardianGuardHistory(status, page):
     finally:
         util.closeSession()
 
+@guardian_bp.route('/guard/confirm/status/<string:yes_or_no>/<int:id>', methods=['GET'])
+@jwt_required(optional=False)
+def guard_status(id, yes_or_no):
+    try:
+        payload = get_jwt_identity()
+
+        if not id:
+            return {'Message': 'find what'}, 400
+
+        if payload['model'] != GUARDIAN:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        guard = guard_repo.findById(id)
+        if not guard:
+            return {'Message': 'Guard does not exist'}, 400
+        
+        if guard.status != Status.ACTIVE_PENDING:
+            return {'Message': 'Cant perform action'}, 400
+        
+        guardian = util.getInstanceFromJwt()
+        
+        # validate guard
+        if guard.guard_guardian != guardian:
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        if yes_or_no == 'yes':
+            guard.status = Status.ACTIVE
+
+        if yes_or_no == 'no':
+            guard.status = Status.INACTIVE
+
+        util.persistModel(guard)
+        # notify super guardians
+        guardians = util.get_student_guardians(guard.guard_student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
+        for g in guardians:
+            for g in guardians:
+                note_service.create_noti(guardian, g, guard, Permit.READONLY)
+
+        return jsonify(getGuardResponse(guard)), 200
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+        

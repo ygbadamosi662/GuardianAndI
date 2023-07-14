@@ -1,5 +1,13 @@
-add another tag, School_Guardian, for school bus implememtation
-a controller that implements the school bus context, to handle school bus pick and drop of students
+add another tag, School_Guardian, for school bus implememtation....done
+
+a controller that implements the school bus context, to handle school bus pick and drop of students(premium only)
 
 implement resolving CONFLICT
-implement a way to employ an auxilary_guardian and avenue for school to employ their school_guardians on our platform, provide data about such guardians so they can make informed decision on who they are employing as their war/student guardian, maybe we will need an employ table, to document guardians available for employments and guardians that are currently employed and who they are employed to 
+
+implement school registering an existing student on outr platform and school registering student from super_guardians email
+
+implement a way to employ an auxilary_guardian and avenue for school to employ their school_guardians on our platform, provide data about such guardians so they can make informed decision on who they are employing as their war/student guardian, maybe we will need an employ table, to document guardians available for employments and guardians that are currently employed and who they are employed to(premium users only)
+
+implement a way for school and guardians to customize the notes sent with any notification they sent and it should be optional, they sshould be able to choose when and who to use it with(premium only)
+
+implement a lightweight chat, will between users(school-guardian or guardian-guardian), about a subject(registry, guard, pad, student), for complaints, comments, updates etc. probalbly will need a chat table[union(ids of concered users as a string seperated by '_' eg 1_2_3), many-to-one relationship with notification(one), ](premium only) 
