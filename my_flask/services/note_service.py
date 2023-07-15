@@ -60,7 +60,7 @@ class Note_Service(Service):
         # requests to our app
         if notis:
             # super_guardians sanity test
-            if receiver.__tablename__ == 'guardians' and receiver.tag == Tag.SUPER_GUARDIAN:
+            if receiver.__tablename__ == 'guardians':
                 notis = self.superG_pad_sanity_test(notis)
 
             return notis
@@ -75,7 +75,7 @@ class Note_Service(Service):
             notis_read_and_write = self.maintain_user_notification_sanity(notis_read_and_write, receiver)
 
             notis_read_only = note_repo.pageByReceiverAndPermitAndNotActivity(receiver, Activity.SEEN, 
-                                                                              Permit.READONLY)
+                                                                              Permit.READONLY, page)
 
             return notis_read_and_write + notis_read_only
         

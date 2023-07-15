@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from response_object import getListOfResponseObjects, getGuardResponse
 from sqlalchemy.exc import SQLAlchemyError
-from global_variables import GUARD, GUARDIAN
+from global_variables import GUARD, GUARDIAN, UNLINKED
 from utility import util
 from Enums.status_enum import Status
 from Enums.tag_enum import Tag
@@ -126,4 +126,43 @@ def guard_status(id, yes_or_no):
         return {'Message': err.args[0]}, 400
     finally:
         util.closeSession()
+
+@guardian_bp.route('/guard/unlink/<int:id>', methods=['GET'])
+@jwt_required(optional=False)
+def unlink(id):
+    try:
+        payload = get_jwt_identity()
+        if payload['model'] != GUARDIAN:
+            return {'Message': 'Invalid Credentials'}, 400
         
+        guard = guard_repo.findById(id)
+        if not guard:
+            return {'Message': 'Guard does not exist'}, 400
+        
+        guardian = util.getInstanceFromJwt()
+        
+        if (util.student_validate_guardian(guard.guard_student, guardian, 'super') == False) and (guard.guard_guardian != guardian):
+            return {'Message': 'Invalid Credentials'}, 400
+        
+        if guard.tag == Tag.SUPER_GUARDIAN:
+            if guardian != guard.guard_guardian:
+                return {'Message': 'Invalid Credentials'}, 400
+
+        guard.status = Status.INACTIVE
+        util.persistModel(guard)
+        
+        # notify guardians
+        if (guard.tag != Tag.SUPER_GUARDIAN) and (guardian != guard.guard_guardian):
+            note_service.create_noti(guardian, guard.guard_guardian, guard, Permit.READONLY, UNLINKED)
+        
+        for g in util.get_active_student_guardians(guard.guard_student, Tag.SUPER_GUARDIAN):
+            if g != guardian:
+                note_service.create_noti(guardian, g, guard, Permit.READONLY, UNLINKED)
+
+        return jsonify(getGuardResponse(guard)), 200
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()

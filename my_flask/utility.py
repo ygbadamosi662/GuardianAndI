@@ -32,7 +32,7 @@ class Utility:
     def __init__(self):
         self.session = storage.get_session()
 
-    def getInstanceFromJwt(self):
+    def getInstanceFromJwt(self) -> Union[Guardian, School]:
         payload = get_jwt_identity()
 
         if payload['model'] == GUARDIAN:
@@ -255,7 +255,7 @@ class Utility:
             if model == SCHOOL:
                 return pad.PAD_registry.registry_school
 
-    def get_active_student_guardians(self, student: Guardian, tag: Tag = None) -> List[Guardian]:
+    def get_active_student_guardians(self, student: Student, tag: Tag = None) -> List[Guardian]:
         
         if student:
             if tag == None:
@@ -314,5 +314,6 @@ class Utility:
                 return [guard.guard_guardian for guard in guards]
         except SQLAlchemyError as err:
             print(err._message())
+
 
 util = Utility()  

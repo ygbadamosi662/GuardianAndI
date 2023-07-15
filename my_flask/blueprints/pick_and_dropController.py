@@ -54,10 +54,12 @@ def initiateDrop():
         
         registry = {}
         
+        # this checks if student have an active registration
         registry = registry_repo.findByStudentAndStatus(student, Status.ACTIVE)
         if not registry:
             return {'message': 'Student does not have any active registration'}
         
+        # this checks if student as any ongoing pad
         if util.check_for_active_registry_pad(registry, True):
             return {'message': 'Student already in play'}, 400
         
