@@ -20,9 +20,9 @@ class Auth(Enum):
     """
 
     # should go:
-    # INITIATED ➡ SCHOOL_IN ➡ SG_IN ➡ IN_TRANSIT ➡ ARRIVED
-    #            ⬇                ⬇                      ⬇                             
-    #         SCHOOL_OUT        SG_OUT                FALSE  
+    # INITIATED ➡ SG_IN  ➡ SCHOOL_IN ➡ READY ➡ IN_TRANSIT ➡ ARRIVED
+    #               ⬇                ⬇                      ⬇                             
+    #             SG_OUT         SCHOOL_OUT                CONFLICT  
 
 
     INITIATED = 'INITIATED'
@@ -46,8 +46,8 @@ class Auth(Enum):
         """
         if self == Auth.INITIATED:
             if choice:
-                return Auth.SCHOOL_IN
-            return Auth.SCHOOL_OUT
+                return Auth.SG_IN
+            return Auth.SG_OUT
         
     def nextOfSchool_in(self, choice: bool) -> Enum:
         """
@@ -56,8 +56,8 @@ class Auth(Enum):
         """
         if self == Auth.SCHOOL_IN:
             if choice:
-                return Auth.SG_IN
-            return Auth.SG_OUT
+                return Auth.READY
+            return Auth.CONFLICT
         
     def nextOfSG_IN(self, choice: bool) -> Enum:
         """
@@ -66,8 +66,8 @@ class Auth(Enum):
         """
         if self == Auth.SG_IN:
             if choice:
-                return Auth.READY
-            return Auth.CONFLICT
+                return Auth.SCHOOL_IN
+            return Auth.SCHOOL_OUT
         
     def nextOfREADY(self, choice: bool) -> Enum:
         """

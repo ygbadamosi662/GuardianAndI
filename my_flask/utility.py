@@ -176,7 +176,7 @@ class Utility:
     def pad_validate_guardian(self, pad: PickAndDrop, guardian: Guardian, who: str = 'all') -> bool:
         if not pad or not guardian:
             return False
-        
+        guardians = {}
         if who == 'all':
             guardians = self.get_pad_guardians(pad)
 
@@ -228,25 +228,24 @@ class Utility:
         if pad:
             if tag == None:
                 guards = guard_repo.findByStudentAndStatus(pad.PAD_guard.guard_student, Status.ACTIVE)
+                
                 if guards:
-                    print(guards)
                     for guard in guards:
                         if (guard.tag == Tag.AUXILLARY_GUARDIAN) or (guard.tag == Tag.SCHOOL_GUARDIAN):
                             if pad.PAD_guard != guard:
                                 guards.remove(guard)
-                    print(guards)
-                return [guard.guard_guardian for guard in guards]
+
+                    return [guard.guard_guardian for guard in guards]
             
             guards = guard_repo.findByStudentAndStatusAndTag(pad.PAD_guard.guard_student, Status.ACTIVE, tag)
-
-            if (tag == Tag.AUXILLARY_GUARDIAN) or  (tag == Tag.SCHOOL_GUARDIAN):
-                if guards:
-                        for guard in guards:
-                            if (guard.tag == Tag.AUXILLARY_GUARDIAN) or (guard.tag == Tag.SCHOOL_GUARDIAN):
-                                if pad.PAD_guard != guard:
-                                    guards.remove(guard)
             
-            return [guard.guard_guardian for guard in guards]
+            if guards:
+                for guard in guards:
+                    if (guard.tag == Tag.AUXILLARY_GUARDIAN) or (guard.tag == Tag.SCHOOL_GUARDIAN):
+                        if pad.PAD_guard != guard:
+                            guards.remove(guard)
+    
+                return [guard.guard_guardian for guard in guards]
         
     def get_pad_student_or_school(self, pad: PickAndDrop, model: str) -> Union[Student, School]:
         if pad:

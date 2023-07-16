@@ -65,8 +65,8 @@ class GuardRepo:
     def findByStudentAndStatus(self, student: Student, status: Status) -> List[Guard]:
         if student:
             try:
-                guards = self.session.query(Guard).filter(and_(Guard.guard_student == student, 
-                                                               Guard.status == status)).all()
+                guards = self.session.query(Guard).filter(Guard.guard_student == student, Guard.status == status).all()
+
                 return guards
             except SQLAlchemyError:
                 return

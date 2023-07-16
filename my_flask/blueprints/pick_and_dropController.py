@@ -115,19 +115,26 @@ def school_yes_or_no(id, yes_or_no):
             return {'message': 'Invalid Credentials'}, 400
 
         # validates access
-        if (pad.auth != Auth.INITIATED) and (pad.auth != Auth.SCHOOL_IN):
+        if (pad.auth != Auth.SG_IN) and (pad.auth != Auth.SCHOOL_IN) and (pad.auth != Auth.SCHOOL_OUT):
             return {'Message': 'PAD does not have the proper authorization'}, 400
 
         if (yes_or_no == 'yes') and (pad.auth == Auth.SCHOOL_IN):
             return {'message': 'Yes we know'}, 200
+        
+        if (yes_or_no == 'no') and (pad.auth == Auth.SCHOOL_OUT):
+            return {'message': 'Yes we know'}, 200
 
         # if school is in
         if yes_or_no == 'yes':
+            if pad.auth == Auth.SCHOOL_OUT:
+                pad.auth = Auth.SCHOOL_IN
+            
+            if pad.auth == Auth.SG_IN:
                 pad.auth = pad.auth.next(True)
 
         # if school is out
         if yes_or_no == 'no':
-            if pad.auth != Auth.SCHOOL_IN:
+            if pad.auth == Auth.SG_IN:
                 pad.auth = pad.auth.next(False)
 
             if pad.auth == Auth.SCHOOL_IN:
@@ -162,6 +169,7 @@ def school_yes_or_no(id, yes_or_no):
 @jwt_required(optional=False)
 def guardian_yes_or_no(id, yes_or_no):
     try:
+        
         payload = get_jwt_identity()
         if payload['model'] != GUARDIAN:
             return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
@@ -170,18 +178,17 @@ def guardian_yes_or_no(id, yes_or_no):
         # checks if pad exist
         if not pad:
             return {'message': 'Pick or Drop does not exist'}, 400
-
+        
         guardian = util.getInstanceFromJwt()
-
+        
         # validates guardian
         if util.pad_validate_guardian(pad, guardian, 'super') == False:
             return {'message': 'Invalid Credentials'}, 400
-
+        
         # validates Auth
-        if (pad.auth != Auth.SCHOOL_IN) and (pad.auth != Auth.SG_IN) and (pad.auth != Auth.SG_OUT):
+        if (pad.auth != Auth.INITIATED) and (pad.auth != Auth.SG_IN) and (pad.auth != Auth.SG_OUT):
             return {'Message': 'PAD does not have the proper authorization'}, 400
-
-
+        
         # checks for conflicting Authorization
         if (yes_or_no == 'no') and (pad.auth == Auth.SG_IN):
             if pad.auth_provider == guardian:
@@ -190,15 +197,10 @@ def guardian_yes_or_no(id, yes_or_no):
                 
                 return jsonify(getPadResponse(pad)), 200
 
-            if pad.auth_provider != guardian:
-                # pad.auth = pad.auth.next(False)
-                # util.persistModel(pad)
-                
-                # when notification is implemented an alarm otification should be use here
-                return {
-                    'Message': 'We already have the required authorization',
-                    'pad': jsonify(getPadResponse(pad))
-                    }, 400
+            name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
+
+            return {'message': 'We already have the required authorization'+
+            ' from {}, thank you'.format(name)}, 400
 
         if yes_or_no == 'yes':
             if (pad.auth == Auth.SG_IN) or (pad.auth == Auth.SG_OUT):
@@ -217,7 +219,7 @@ def guardian_yes_or_no(id, yes_or_no):
                     return {'message': 'We already have the required authorization'+
                         ' from {}, thank you'.format(name)}, 400
             
-            if pad.auth == Auth.SCHOOL_IN:
+            if pad.auth == Auth.INITIATED:
                 pad.auth = pad.auth.next(True)
                 pad.auth_provider = guardian
 
@@ -225,6 +227,7 @@ def guardian_yes_or_no(id, yes_or_no):
             if (pad.auth == Auth.SG_OUT) or (pad.auth == Auth.SG_IN):
                 if pad.auth_provider == guardian:
                     if pad.auth == Auth.SG_OUT:
+                        name = pad.auth_provider.first_name +" "+pad.auth_provider.last_name
                         return {'message': 'We already have the required authorization'+
                         ' from {}, thank you'.format(name)}, 400
                     
@@ -236,14 +239,15 @@ def guardian_yes_or_no(id, yes_or_no):
                     return {'message': 'We already have the required authorization '+
                             'from {}, thank you'.format(name)}, 400
             
-            if pad.auth == Auth.SCHOOL_IN:
-                pad.auth == Auth.SG_OUT
+            if pad.auth == Auth.INITIATED:
+                pad.auth = Auth.SG_OUT
                 pad.auth_provider = guardian
 
         util.persistModel(pad)
 
         # notify guardianss
         guardians = util.get_pad_guardians(pad)
+        print(guardians)
         for g in guardians:
             if util.pad_validate_guardian(pad, g, 'auxs'):
                 note_service.create_noti(guardian, g, pad, Permit.READ_AND_WRITE, CONFIRMATION)
@@ -272,8 +276,8 @@ def ready(id, yes_or_no):
         if not pad:
             return {'Message': 'PAD does not exist'}, 400
         
-        if pad.auth != Auth.SG_IN:
-            return {'Message': 'Invalid Authorization'}, 400
+        if pad.auth != Auth.SCHOOL_IN:
+            return {'Message': 'Insufficient Authorization'}, 400
         
         payload = get_jwt_identity()
         
@@ -289,11 +293,11 @@ def ready(id, yes_or_no):
 
             # READY if yes
             if yes_or_no == 'yes':
-                pad.auth = pad.auth.nextOfSG_IN(True)
+                pad.auth = pad.auth.nextOfSchool_in(True)
 
             # CONFLICT if no
             if yes_or_no == 'no':
-                pad.auth = pad.auth.nextOfSG_IN(False)
+                pad.auth = pad.auth.nextOfSchool_in(False)
 
             # notify guardians
             guardians = util.get_pad_guardians(pad)
@@ -316,11 +320,11 @@ def ready(id, yes_or_no):
             
             # READY if yes
             if yes_or_no == 'yes':
-                pad.auth = pad.auth.nextOfSG_IN(True)
+                pad.auth = pad.auth.nextOfSchool_in(True)
 
             # CONFLICT if no
             if yes_or_no == 'no':
-                pad.auth = pad.auth.nextOfSG_IN(False)
+                pad.auth = pad.auth.nextOfSchool_in(False)
 
             # notify school
             school = util.get_pad_student_or_school(pad, SCHOOL)
