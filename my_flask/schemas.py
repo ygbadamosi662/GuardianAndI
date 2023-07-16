@@ -60,3 +60,9 @@ class StudentPadSchema(Schema):
     page = fields.Number(required=True)
 
 student_pad_schema = StudentPadSchema()
+
+class LoginSchema(Schema):
+    email = fields.String(required=True)
+    password = fields.String(required=True)
+    
+login_schema = LoginSchema()

@@ -10,9 +10,11 @@ from models.pick_and_drop import PickAndDrop
 from models.guard import Guard
 from models.notification import Notification
 from models.registry import Registry
+from models.jwt_blacklist import Jwt_Blacklist
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
+
 
 path = find_dotenv('gi_dev_sql.env')
 load_dotenv(path)
@@ -55,6 +57,7 @@ class DBStorage:
             objs.extend(self.__session.query(Guard).all())
             objs.extend(self.__session.query(Notification).all())
             objs.extend(self.__session.query(Registry).all())
+            objs.extend(self.__session.query(Jwt_Blacklist).all())
         else:
             if type(cls) == str:
                 cls = eval(cls)

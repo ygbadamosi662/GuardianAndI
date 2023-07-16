@@ -21,7 +21,6 @@ class User(Base):
 
     sender_notes = relationship("Notification", primaryjoin=id==Notification.sender_id)
     receiver_notes = relationship("Notification", primaryjoin=id==Notification.receiver_id)
-    # type: Mapped[str]
 
     __mapper_args__ = {
         "polymorphic_identity": "user",

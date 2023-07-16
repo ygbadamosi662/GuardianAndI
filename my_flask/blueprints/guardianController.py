@@ -21,6 +21,10 @@ guard_repo = GuardRepo()
 @jwt_required(optional=False)
 def guardianGetsStudents(tag, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         if payload['model'] != GUARDIAN:
@@ -53,6 +57,10 @@ def guardianGetsStudents(tag, page):
 @jwt_required(optional=False)
 def getGuardianGuardHistory(status, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+
         payload = get_jwt_identity()
         # checks if user is permitted
         if payload['model'] != GUARDIAN:
@@ -85,6 +93,10 @@ def getGuardianGuardHistory(status, page):
 @jwt_required(optional=False)
 def guard_status(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         if not id:
@@ -131,6 +143,10 @@ def guard_status(id, yes_or_no):
 @jwt_required(optional=False)
 def unlink(id):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         if payload['model'] != GUARDIAN:
             return {'Message': 'Invalid Credentials'}, 400

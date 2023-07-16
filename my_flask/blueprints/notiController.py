@@ -17,6 +17,10 @@ noti_bp = Blueprint('noti', __name__)
 @jwt_required(optional=False)
 def get_notifications(page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         user = util.getInstanceFromJwt()
         return jsonify(getListOfResponseObjects(NOTIFICATION, note_service.get_needy_notis(user, page))), 200
 
@@ -31,6 +35,10 @@ def get_notifications(page):
 @jwt_required(optional=False)
 def update_notifications(id):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         noti = note_repo.findById(id)
         if not noti:
             return {'Message': 'Cant find notification'}, 400

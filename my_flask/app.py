@@ -1,6 +1,5 @@
-from flask import Flask, jsonify, current_app
-from blueprints.regController import reg_bp
-from blueprints.loginController import login_bp
+from flask import Flask, jsonify
+from blueprints.userController import user_bp
 from blueprints.studentController import student_bp
 from blueprints.schoolController import school_bp
 from blueprints.guardianController import guardian_bp
@@ -23,8 +22,7 @@ ma = Marshmallow(app)
 
 path_prefix = '/api/v1'
 
-app.register_blueprint(reg_bp, url_prefix=path_prefix)
-app.register_blueprint(login_bp, url_prefix=path_prefix)
+app.register_blueprint(user_bp, url_prefix=path_prefix+'/user')
 app.register_blueprint(student_bp, url_prefix=path_prefix+'/student')
 app.register_blueprint(school_bp, url_prefix=path_prefix+'/school')
 app.register_blueprint(guardian_bp, url_prefix=path_prefix+'/guardian')

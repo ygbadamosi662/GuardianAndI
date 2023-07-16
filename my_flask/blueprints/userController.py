@@ -1,72 +1,29 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from marshmallow import fields, Schema, ValidationError
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from marshmallow import ValidationError
 from services.note_service import note_service
 from models.school import School
 from models.guardian import Guardian
 from models.student import Student
 from models.registry import Registry
+from  models.jwt_blacklist import Jwt_Blacklist
 from models.guard import Guard
 from sqlalchemy.exc import SQLAlchemyError
-# from sqlalchemy import exc as sa_exc
-# from models.notification import Notification
+from schemas import student_schema, school_schema, guardian_schema, login_schema
 from utility import util
-from global_variables import SCHOOL, GUARDIAN, STUDENT, AUTHORIZATION, CONFIRMATION
-from repos.studentRepo import StudentRepo
-from repos.guardianRepo import GuardianRepo
-from repos.schoolRepo import SchoolRepo
-from Enums.gender_enum import Gender
+from global_variables import SCHOOL, GUARDIAN, STUDENT, AUTHORIZATION, CONFIRMATION, globalBcrypt
+from repos.schoolRepo import school_repo
+from repos.guardianRepo import guardian_repo
+from repos.studentRepo import student_repo
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 from Enums.permit_enum import Permit
 
 
-reg_bp = Blueprint('reg', __name__)
-# ma = Marshmallow(reg_bp)
+user_bp = Blueprint('user', __name__)
+jwtPayload = {}
 
-
-class SchoolSchema(Schema):
-    school_name = fields.String(required=True)
-    email = fields.Email(required=True)
-    password = fields.String(required=True)
-    address = fields.String(required=True)
-    city = fields.String(required=True)
-
-school_schema = SchoolSchema()
-
-class GuardianSchema(Schema):
-    first_name = fields.String(required=True)
-    last_name = fields.String(required=True)
-    email = fields.Email(required=True)
-    password = fields.String(required=True)
-    gender = fields.Enum(Gender)
-    dob = fields.Date("iso")
-
-guardian_schema = GuardianSchema()
-
-def validate_length(value, school):
-    if value != school:
-        raise ValidationError("Invalid credential")
-
-class StudentSchema(Schema):
-    first_name = fields.String(required=True)
-    last_name = fields.String(required=True)
-    email = fields.Email(required=True)
-    gender = fields.Enum(Gender)
-    grade = fields.String(required=True)
-    dob = fields.Date("iso")
-    user_email = fields.Email(required=True)
-    
-student_schema = StudentSchema()
-
-
-student_repo = StudentRepo()
-school_repo = SchoolRepo()
-guardian_repo = GuardianRepo()
-
-    
-
-@reg_bp.route('/reg/school', methods=['POST'])
+@user_bp.route('/reg/school', methods=['POST'])
 def schoolReg():
     try:
         data = request.get_json()
@@ -93,7 +50,7 @@ def schoolReg():
     finally:
         util.closeSession()
     
-@reg_bp.route('/reg/guardian', methods=['POST'])
+@user_bp.route('/reg/guardian', methods=['POST'])
 def guardianReg():  
     try:
         data = request.get_json()
@@ -119,10 +76,14 @@ def guardianReg():
     finally:
         util.closeSession()
 
-@reg_bp.route('/reg/student', methods=['POST'])
+@user_bp.route('/reg/student', methods=['POST'])
 @jwt_required()
 def studentReg():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         data = request.get_json()
         payload = get_jwt_identity()
 
@@ -198,6 +159,93 @@ def studentReg():
 
     except ValidationError as err:
         return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@user_bp.route('/login/school', methods=['POST'])
+def loginSchool():
+    data = request.get_json()
+    
+    try:
+        loginData = login_schema.load(data)
+
+        if util.validate_table_integrity(loginData['email'], SCHOOL) == False:
+            return {'Message': 'Invalid Credentials'}
+
+        school = school_repo.findByEmail(loginData['email'])
+
+        if not school:
+            return {'message': 'Invalid Credentials, only {} is allowed'.format(SCHOOL)}, 401
+
+        if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), school.password.encode('utf-8')):
+            return jsonify({'message': 'Invalid Credentials'}), 401
+
+        jwtPayload['email'] = loginData['email']
+        jwtPayload['model'] = SCHOOL
+
+        jwt = create_access_token(identity=jwtPayload)
+
+        return jsonify({'jwt': jwt}), 201
+    
+    except ValidationError as err:
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@user_bp.route('/login/guardian', methods=['POST'])
+def loginGuardian():
+    
+    data = request.get_json()
+    
+    try:
+        loginData = login_schema.load(data)
+
+        if util.validate_table_integrity(loginData['email'], GUARDIAN) == False:
+            return {'Message': 'Invalid Credentials'}
+
+        guardian = guardian_repo.findByEmail(loginData['email'])
+
+        if not guardian:
+            return jsonify({'message': 'Invalid Credentials, only {} is allowed'.format(GUARDIAN)}), 400
+
+        if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), guardian.password.encode('utf-8')):
+            return jsonify({'message': 'Invalid Credentials'}), 401
+
+        jwtPayload['email'] = loginData['email']
+        jwtPayload['model'] = GUARDIAN
+
+        jwt = create_access_token(identity=jwtPayload)
+
+        return jsonify({'jwt': jwt}), 201
+    
+    except ValidationError as err:
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@user_bp.route('/signout', methods=['GET'])
+@jwt_required(optional=False)
+def signout():
+    try:
+        jwt_token = request.headers.get('Authorization')[7:]
+        user = util.getInstanceFromJwt()
+
+        blacklist = Jwt_Blacklist(jwt=jwt_token, user=user)
+        util.persistModel(blacklist)
+        
+        return {'Message': 'Signed out successfully'}, 201
     except TypeError as err:
         return {'Message': err.args[0]}, 400
     except SQLAlchemyError as err:

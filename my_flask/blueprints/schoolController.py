@@ -19,6 +19,10 @@ registry_repo = RegistryRepo()
 @jwt_required(optional=False)
 def pageStudentsByGrade(grade, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         # checks if user is permitted
@@ -44,6 +48,10 @@ def pageStudentsByGrade(grade, page):
 @jwt_required(optional=False)
 def getGuardianGuardHistory(status, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         # checks if user is permitted
         if payload['model'] != SCHOOL:

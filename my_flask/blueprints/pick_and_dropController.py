@@ -28,12 +28,16 @@ pad_bp = Blueprint('pad', __name__)
 @pad_bp.route('/initiate', methods=['POST'])
 @jwt_required(optional=False)
 def initiateDrop():
-    payload = get_jwt_identity()
-    # checks credentials
-    if payload['model'] != GUARDIAN:
-        return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
-    
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+
+        payload = get_jwt_identity()
+        # checks credentials
+        if payload['model'] != GUARDIAN:
+            return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
+
         data = request.get_json()
         padData = pad_schema.load(data)
 
@@ -99,6 +103,10 @@ def initiateDrop():
 @jwt_required(optional=False)
 def school_yes_or_no(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         if payload['model'] != SCHOOL:
             return {'message': 'Invalid Credentials, {} is not allowed'.format(payload['model'])}, 400
@@ -169,6 +177,9 @@ def school_yes_or_no(id, yes_or_no):
 @jwt_required(optional=False)
 def guardian_yes_or_no(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
         
         payload = get_jwt_identity()
         if payload['model'] != GUARDIAN:
@@ -247,7 +258,6 @@ def guardian_yes_or_no(id, yes_or_no):
 
         # notify guardianss
         guardians = util.get_pad_guardians(pad)
-        print(guardians)
         for g in guardians:
             if util.pad_validate_guardian(pad, g, 'auxs'):
                 note_service.create_noti(guardian, g, pad, Permit.READ_AND_WRITE, CONFIRMATION)
@@ -271,6 +281,10 @@ def guardian_yes_or_no(id, yes_or_no):
 @jwt_required(optional=False)
 def ready(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         pad = pad_repo.findById(id)
         # checks if pad exists
         if not pad:
@@ -358,6 +372,10 @@ def ready(id, yes_or_no):
 @jwt_required(optional=False)
 def shoo(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         pad = pad_repo.findById(id)
         # checks if pad exist
@@ -447,6 +465,10 @@ def shoo(id, yes_or_no):
 @jwt_required(optional=False)
 def arrived_or_not(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         pad = pad_repo.findById(id)
         # checks if pad exist
@@ -529,6 +551,10 @@ def arrived_or_not(id, yes_or_no):
 @jwt_required(optional=False)
 def get_pad(id: int):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         if not id:
             return {'Message': 'Which pad?...id is not set'}, 400
@@ -570,6 +596,10 @@ def get_pad(id: int):
 @jwt_required(optional=False)
 def get_pads(filter, page, action):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         # if guardian
@@ -667,6 +697,10 @@ def get_pads(filter, page, action):
 @jwt_required(optional=False)
 def studentPad():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         data = request.get_json()
         validData = student_pad_schema.load(data)
 

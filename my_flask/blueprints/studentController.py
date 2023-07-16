@@ -29,6 +29,10 @@ registry_repo = RegistryRepo()
 @jwt_required(optional=False)
 def getStudent(email):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         if not email:
             return {'Message': 'No unique identifier'}, 400
         
@@ -53,6 +57,10 @@ def getStudent(email):
 @jwt_required(optional=False)
 def getStudents():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         if payload['model'] != SCHOOL:
             return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
@@ -72,6 +80,10 @@ def getStudents():
 @jwt_required(optional=False)
 def linkStudent():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         data = request.get_json()
         linkData = link_schema.load(data)
 
@@ -135,6 +147,10 @@ def linkStudent():
 @jwt_required(optional=False) 
 def backToSchool():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         data = request.get_json()
         updateData = update_schema.load(data)
        
@@ -214,6 +230,10 @@ def backToSchool():
 @jwt_required(optional=False)
 def removeSchool(email):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         if not email:
@@ -276,6 +296,10 @@ def removeSchool(email):
 @jwt_required(optional=False)
 def getGuards(email, status, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         if not email:
@@ -327,6 +351,10 @@ def getGuards(email, status, page):
 @jwt_required(optional=False)
 def getGuardianGuardHistory(email, status, page):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
         if not email:
             return {'Message': 'Cant find nothing with nothing'}, 400
@@ -377,6 +405,10 @@ def getGuardianGuardHistory(email, status, page):
 @jwt_required(optional=False)
 def registry_status(id, yes_or_no):
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         payload = get_jwt_identity()
 
         if not id:

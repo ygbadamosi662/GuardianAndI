@@ -9,11 +9,12 @@ from repos.schoolRepo import school_repo, School
 from repos.guardRepo import guard_repo, Guard
 from models.pick_and_drop import PickAndDrop
 from repos.pick_and_dropRepo import pad_repo
-from repos.registryRepo import registry_repo, Registry
+from repos.registryRepo import Registry
+from repos.jwt_blaclistRepo import Jwt_Blacklist_repo, Jwt_Blacklist
 from Enums.auth_enum import Auth
 from Enums.action_enum import Action
 from models.student import Student
-from global_variables import GUARDIAN, SCHOOL, PICK_AND_DROP, REGISTRY, GUARD, STUDENT
+from global_variables import GUARDIAN, SCHOOL, STUDENT
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 
@@ -248,6 +249,7 @@ class Utility:
                 return [guard.guard_guardian for guard in guards]
         
     def get_pad_student_or_school(self, pad: PickAndDrop, model: str) -> Union[Student, School]:
+        # this methods get a pads student or school based on the model supplied
         if pad:
             if model == STUDENT:
                 return pad.PAD_registry.registry_student
@@ -255,7 +257,7 @@ class Utility:
                 return pad.PAD_registry.registry_school
 
     def get_active_student_guardians(self, student: Student, tag: Tag = None) -> List[Guardian]:
-        
+        # this methods get active students guardians based on their guards tag
         if student:
             if tag == None:
                 guards = guard_repo.findByStudentAndStatus(student, Status.ACTIVE)
@@ -266,6 +268,7 @@ class Utility:
             return [guard.guard_guardian for guard in guards]
         
     def validate_table_integrity(self, email: str, model: str) -> bool:
+        # this method checks if a certain mapped instance already exists in its table, it only checks for schools, students and guardians table for now
         if model == SCHOOL:
             exists_query = self.session.query(exists().where(School.email == email))
 
@@ -278,6 +281,7 @@ class Utility:
         return self.session.scalar(exists_query)
 
     def take_string_give_authEnum(self, filter: str) -> Auth:
+        # this method should be taken literally, give it an appropraite string and it returns the apropriate Auth enum
         if filter == 'conflict':
             return Auth.CONFLICT
         if filter == 'initiated':
@@ -300,12 +304,14 @@ class Utility:
             return Auth.ARRIVED
 
     def take_string_give_actionEnum(self, act: str) ->Action:
+        # this method should be taken literally, give it an appropraite string and it returns the apropriate Action enum
         if act == 'drop':
             return Action.DROP_OFF
         if act == 'pick':
             return Action.PICK_UP
     
     def get_student_guardians(self, student: Student, tag: Tag, status: Status) -> List[Guardian]:
+        # this method gets the guardians of a student based on the guards tag and status
         try:
             if student and tag and status:
                 guards = guard_repo.findByStudentAndStatusAndTag(student, status, tag)
@@ -314,5 +320,13 @@ class Utility:
         except SQLAlchemyError as err:
             print(err._message())
 
+    def validate_against_jwt_blacklist(self) -> bool:
+        # this method checks if the user token is blacklisted. only use in @jwt_required protected endpoint and make sure the optional param of @jwt_required is set to False cause this method does not check if the jwt is present in the header, it assumes jwt is present in the Authorization header of the request in this format 'Bearer jwt_token'
 
-util = Utility()  
+        from flask import request
+        jwt_token = request.headers.get('Authorization')[7:]
+        exists_query = self.session.query(exists().where(Jwt_Blacklist.jwt == jwt_token))
+
+        return self.session.scalar(exists_query)
+
+util = Utility()
