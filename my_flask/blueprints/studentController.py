@@ -14,7 +14,7 @@ from global_variables import SCHOOL, STUDENT, GUARDIAN, GUARD, REGISTRY, CONFIRM
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 from Enums.permit_enum import Permit
-from schemas import link_schema, update_schema
+from schemas import link_schema, update_schema, update_sc_schema
 
 
 student_bp = Blueprint('student', __name__)
@@ -36,7 +36,7 @@ def getStudent(email):
         if not email:
             return {'Message': 'No unique identifier'}, 400
         
-        if util.validate_table_integrity(email, STUDENT) == False:
+        if util.validate_table_integrity_byEmail(email, STUDENT) == False:
             return {'Message': 'Invalid Credentials'}, 400
 
         student = student_repo.findByEmail(email)
@@ -93,11 +93,11 @@ def linkStudent():
             return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
         
         # check if student exists
-        if util.validate_table_integrity(linkData['student_email'], STUDENT) == False:
+        if util.validate_table_integrity_byEmail(linkData['student_email'], STUDENT) == False:
             return {'Message': 'Student does not exist'}, 400
         
         # check if new guardian exists
-        if util.validate_table_integrity(linkData['guardian_email'], GUARDIAN) == False:
+        if util.validate_table_integrity_byEmail(linkData['guardian_email'], GUARDIAN) == False:
             return {'Message': 'Guardian does not exist'}, 400
         
         student = student_repo.findByEmail(linkData['student_email'])
@@ -152,71 +152,98 @@ def backToSchool():
             return {'Message': 'Your session has expired, login again'}, 400
         
         data = request.get_json()
-        updateData = update_schema.load(data)
+        
        
 
         payload = get_jwt_identity()
-        # checks if model is allowed
-        if payload['model'] != GUARDIAN:
-            return {'message': 'Invalid Credentials, only {} allowed'.format(payload['model'])}, 400
-        
-        # checks if student exist
-        if util.validate_table_integrity(updateData['student_email'], STUDENT) == False:
-            return {'Message': 'Student does not exist'}, 400
-        
-        # checks if school exist
-        if util.validate_table_integrity(updateData['user_email'], SCHOOL) == False:
-            return {'Message': 'School does not exist'}, 400
-        
-        student = student_repo.findByEmail(updateData['student_email'])
+        savedRegistry = {}
 
-        # check if guardian is an active super-guardian of the student
-        if util.isGuardian(student, util.getInstanceFromJwt(), True, True) == False:
-            return {'message': 'Inavalid Credentials'}, 400
-        
-        school = school_repo.findByEmail(updateData['user_email'])
-        
-        # checks if student has an active registration with the provided school already
-        if util.ifStudent(student, school):
-            return {'message': 'Student {} has an active registration with school {}'.format(updateData['student_email'], updateData['user_email'])}, 400
-        # handling old school
-        old_school = student.student_school
-        if old_school:
-            registry = registry_repo.findByStudentAndSchool(student, old_school)
-            registry.status = Status.INACTIVE
+        if payload['model'] == SCHOOL:
+            email = update_sc_schema.load(data)['email']
+
+            # checks if student exist
+            if util.validate_table_integrity_byEmail(email, STUDENT) == False:
+                return {'Message': 'Student does not exist'}, 400
+            
+            student = student_repo.findByEmail(updateData['student_email'])
+            school = util.getInstanceFromJwt()
+
+            if student.student_school:
+                if student.student_school == school:
+                    return {'Message': 'Student already have an active regustration with your school'}, 400
+                
+                return {'Message', 'Student have an active registration with a school, reach out to a super-guardian to deactivate the registration, then you can register this student  or get the super-guardian to register their ward to your school themselves'}, 400
+            
+            registry = Registry(registry_school=school, registry_student=student, status=Status.ACTIVE_GYELLOW)
             util.persistModel(registry)
-
-            # notify school
-            note_service.create_noti(guardian, old_school, registry, Permit.READONLY)
 
             # notify guardians
             guardians = util.get_student_guardians(student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
             for g in guardians:
-                if g != guardian:
-                    note_service.create_noti(guardian, g, registry, Permit.READONLY)
+                note_service.create_noti(guardian, g, registry, Permit.READ_AND_WRITE, CONFIRMATION)
 
+            savedRegistry = registry_repo.findByStudentAndSchoolAndStatus(student, school, Status.ACTIVE_GYELLOW)
         
-        student.student_school = school
-        util.persistModel(student)
+        if payload['model'] == GUARDIAN:
+            updateData = update_schema.load(data)
         
-        # creates registry
-        registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE_SYELLOW)
-        util.persistModel(registry)
+            # checks if student exist
+            if util.validate_table_integrity_byEmail(updateData['student_email'], STUDENT) == False:
+                return {'Message': 'Student does not exist'}, 400
 
-        # notify school
-        guardian = util.getInstanceFromJwt()
-        note_service.create_noti(guardian, school, registry, Permit.READ_AND_WRITE, CONFIRMATION)
+            # checks if school exist
+            if util.validate_table_integrity_byEmail(updateData['user_email'], SCHOOL) == False:
+                return {'Message': 'School does not exist'}, 400
 
-        # notify the other guardians
-        sups = util.get_student_guardians(student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
-        for sup in sups:
-            if sup != guardian:
-                note_service.create_noti(guardian, sup, registry, Permit.READONLY)
+            student = student_repo.findByEmail(updateData['student_email'])
 
-        savedRegistry = registry_repo.findByStudentAndStatus(student, Status.ACTIVE)
-        
+            # check if guardian is an active super-guardian of the student
+            if util.isGuardian(student, util.getInstanceFromJwt(), True, True) == False:
+                return {'message': 'Inavalid Credentials'}, 400
+
+            school = school_repo.findByEmail(updateData['user_email'])
+
+            # checks if student has an active registration with the provided school already
+            if util.ifStudent(student, school):
+                return {'message': 'Student {} has an active registration with school {}'.format(updateData['student_email'], updateData['user_email'])}, 400
+            # handling old school
+            old_school = student.student_school
+            if old_school:
+                registry = registry_repo.findByStudentAndSchool(student, old_school)
+                registry.status = Status.INACTIVE
+                util.persistModel(registry)
+
+                # notify old school
+                note_service.create_noti(guardian, old_school, registry, Permit.READONLY)
+
+                # notify guardians
+                guardians = util.get_student_guardians(student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
+                for g in guardians:
+                    if g != guardian:
+                        note_service.create_noti(guardian, g, registry, Permit.READONLY)
+
+
+            student.student_school = school
+            util.persistModel(student)
+
+            # creates registry
+            registry = Registry(registry_student=student, registry_school=school, status=Status.ACTIVE_SYELLOW)
+            util.persistModel(registry)
+
+            # notify new school
+            guardian = util.getInstanceFromJwt()
+            note_service.create_noti(guardian, school, registry, Permit.READ_AND_WRITE, CONFIRMATION)
+
+            # notify the other guardians
+            sups = util.get_student_guardians(student, Tag.SUPER_GUARDIAN, Status.ACTIVE)
+            for sup in sups:
+                if sup != guardian:
+                    note_service.create_noti(guardian, sup, registry, Permit.READONLY)
+
+            savedRegistry = registry_repo.findByStudentAndStatus(student, Status.ACTIVE)
+
         return jsonify(getRegistryResponse(savedRegistry)), 200
-        
+            
     except ValidationError as err:
         return {'message': err.args[0]}, 400
     except SQLAlchemyError as err:
@@ -240,7 +267,7 @@ def removeSchool(email):
             return {'Message': 'Cant find nothing with nothing'}, 400
         
         # checks if student exists
-        if util.validate_table_integrity(email, STUDENT) == False:
+        if util.validate_table_integrity_byEmail(email, STUDENT) == False:
             return {'Message': 'Student does not exist'}, 400
 
         student = student_repo.findByEmail(email)
@@ -306,7 +333,7 @@ def getGuards(email, status, page):
             return {'Message': 'Cant find nothing with nothing'}, 400
         
         # checks if student exists
-        if util.validate_table_integrity(email, STUDENT) == False:
+        if util.validate_table_integrity_byEmail(email, STUDENT) == False:
             return {'Message': 'Student does not exist'}, 400
 
         student = student_repo.findByEmail(email)
@@ -360,7 +387,7 @@ def getGuardianGuardHistory(email, status, page):
             return {'Message': 'Cant find nothing with nothing'}, 400
         
         # checks if student exists
-        if util.validate_table_integrity(email, STUDENT) == False:
+        if util.validate_table_integrity_byEmail(email, STUDENT) == False:
             return {'Message': 'Student does not exist'}, 400
 
         student = student_repo.findByEmail(email)

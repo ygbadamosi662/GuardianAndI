@@ -42,7 +42,7 @@ def initiateDrop():
         padData = pad_schema.load(data)
 
         # checks if student exist
-        if util.validate_table_integrity(padData['student_email'], STUDENT) == False:
+        if util.validate_table_integrity_byEmail(padData['student_email'], STUDENT) == False:
             return {'message': 'student does not exist'}, 400
         
         student = student_repo.findByEmail(padData['student_email'])
@@ -704,7 +704,7 @@ def studentPad():
         data = request.get_json()
         validData = student_pad_schema.load(data)
 
-        if util.validate_table_integrity(validData['student_email'], STUDENT) == False:
+        if util.validate_table_integrity_byEmail(validData['student_email'], STUDENT) == False:
             return {'Message': 'Student does not exist'}, 400
         
         student = student_repo.findByEmail(validData['student_email'])

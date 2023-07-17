@@ -14,6 +14,7 @@ from repos.jwt_blaclistRepo import Jwt_Blacklist_repo, Jwt_Blacklist
 from Enums.auth_enum import Auth
 from Enums.action_enum import Action
 from models.student import Student
+from models.userBase import User
 from global_variables import GUARDIAN, SCHOOL, STUDENT
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
@@ -267,8 +268,8 @@ class Utility:
             guards = guard_repo.findByStudentAndStatusAndTag(student, Status.ACTIVE, tag)
             return [guard.guard_guardian for guard in guards]
         
-    def validate_table_integrity(self, email: str, model: str) -> bool:
-        # this method checks if a certain mapped instance already exists in its table, it only checks for schools, students and guardians table for now
+    def validate_table_integrity_byEmail(self, email: str, model: str) -> bool:
+        # this method checks if a certain mapped instance already exists in its table, it only checks for schools, students and guardians table by their respective email for now
         if model == SCHOOL:
             exists_query = self.session.query(exists().where(School.email == email))
 
@@ -277,6 +278,16 @@ class Utility:
 
         if model == STUDENT:
             exists_query = self.session.query(exists().where(Student.email == email))
+
+        return self.session.scalar(exists_query)
+    
+    def validate_table_integrity_byPhone(self, phone: str, model: str) -> bool:
+        # this method checks if a certain mapped instance already exists in its table, it only checks for school and guardians by their phone number table for now
+        if model == SCHOOL:
+            exists_query = self.session.query(exists().where(School.phone == phone))
+
+        if model == GUARDIAN:    
+            exists_query = self.session.query(exists().where(Guardian.phone == phone))
 
         return self.session.scalar(exists_query)
 
@@ -328,5 +339,44 @@ class Utility:
         exists_query = self.session.query(exists().where(Jwt_Blacklist.jwt == jwt_token))
 
         return self.session.scalar(exists_query)
+
+    def extract_set_data_from_schema(self, data_from_schema: dict) -> Union[dict, bool]:
+        # extracts the set values out from data_from_schema and it keeps the key of the dict
+        if data_from_schema:
+            setData = {}
+            for key, value in data_from_schema.items():
+                if value is not None:
+                    setData[key] = value
+            return setData
+
+    def update_profile(self, set_data: dict, user: User)->Union[School, Guardian]:
+        # updates the users profile accordinly, make sure set_data is returned by self.extract_set_data_from_schemas
+        # or you have made sure all keys in set_data has a value
+        if set_data:
+            g = ['first_name', 'last_name']
+            sch = ['school_name', 'address', 'city']
+
+            if set_data['phone']:
+                user.phone = set_data['phone']
+
+            if user.__tablename__ == SCHOOL:
+                for field in sch:
+                    if sch[0] == field:
+                        user.school_name = set_data[field]
+                    if sch[1] == field:
+                        user.address = set_data[field]
+                    if sch[2] == field:
+                        user.city = set_data[field]
+
+            if user.__tablename__ == GUARDIAN:
+                for field in sch:
+                    if g[0] == field:
+                        user.first_name = set_data[field]
+                    if sch[1] == field:
+                        user.last_name = set_data[field]
+
+            self.persistModel(user)
+            return user
+
 
 util = Utility()

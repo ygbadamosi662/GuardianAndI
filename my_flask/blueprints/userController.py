@@ -9,7 +9,8 @@ from models.registry import Registry
 from  models.jwt_blacklist import Jwt_Blacklist
 from models.guard import Guard
 from sqlalchemy.exc import SQLAlchemyError
-from schemas import student_schema, school_schema, guardian_schema, login_schema
+from response_object import getSchoolResponse, getGuardianResponse, getStudentResponse
+from schemas import student_schema, school_schema, guardian_schema, login_schema, profile_update_schema
 from utility import util
 from global_variables import SCHOOL, GUARDIAN, STUDENT, AUTHORIZATION, CONFIRMATION, globalBcrypt
 from repos.schoolRepo import school_repo
@@ -30,12 +31,16 @@ def schoolReg():
         schoolData = school_schema.load(data)
 
         # checks table integrity
-        if util.validate_table_integrity(schoolData['email'], SCHOOL):
+        if util.validate_table_integrity_byEmail(schoolData['email'], SCHOOL):
             return {'Message': '{} already exists'.format(schoolData['email'])}, 400
+        
+        # checks phone number uniqueness
+        if util.validate_table_integrity_byPhone(schoolData['phone'], SCHOOL):
+            return {'Message': '{} already exists'.format(schoolData['phone'])}, 400
 
         school = School(school_name=schoolData['school_name'], email=schoolData['email'], 
                         password=schoolData['password'], address=schoolData['address'], 
-                        city=schoolData['city'])
+                        city=schoolData['city'], phone=schoolData['phone'])
         
         util.persistModel(school)
         
@@ -57,10 +62,14 @@ def guardianReg():
         guardianData = guardian_schema.load(data)
 
         # checks table integrity
-        if util.validate_table_integrity(guardianData['email'], GUARDIAN):
+        if util.validate_table_integrity_byEmail(guardianData['email'], GUARDIAN):
             return {'Message': '{} already exists'.format(guardianData['email'])}, 400
+        
+        # checks phone numbers uniqueness
+        if util.validate_table_integrity_byEmail(guardianData['phone'], GUARDIAN):
+            return {'Message': '{} already exists'.format(guardianData['phone'])}, 400
 
-        guardian = Guardian(first_name=guardianData['first_name'], last_name=guardianData['last_name'], email=guardianData['email'], password=guardianData['password'], gender=guardianData['gender'], dob=guardianData['dob'])
+        guardian = Guardian(first_name=guardianData['first_name'], last_name=guardianData['last_name'], email=guardianData['email'], password=guardianData['password'], gender=guardianData['gender'], dob=guardianData['dob'], phone=guardianData['phone'])
         
         util.persistModel(guardian)
         util.closeSession()
@@ -93,7 +102,7 @@ def studentReg():
 
             school = util.getInstanceFromJwt()
 
-            if util.validate_table_integrity(studentData['email'], STUDENT):
+            if util.validate_table_integrity_byEmail(studentData['email'], STUDENT):
                 student = student_repo.findByEmail(studentData['email'])
                 if student.student_school:
                     if student.student_school == school:
@@ -102,7 +111,7 @@ def studentReg():
                 return {'Message': 'Student {} already exists and have an active registration'.format(studentData['email'])}, 400
 
             # checks if guardian exist
-            if util.validate_table_integrity(studentData['user_email'], GUARDIAN) == False:
+            if util.validate_table_integrity_byEmail(studentData['user_email'], GUARDIAN) == False:
                 return {'message': 'Guardian {} does not exist in our world'.format(studentData['user_email'])}, 400
             
             guardian = guardian_repo.findByEmail(studentData['user_email'])
@@ -126,14 +135,14 @@ def studentReg():
         
         if payload['model'] == GUARDIAN:
 
-            if util.validate_table_integrity(studentData['email'], STUDENT):
+            if util.validate_table_integrity_byEmail(studentData['email'], STUDENT):
                 if util.student_validate_guardian(student_repo.findByEmail(studentData['email']), util.getInstanceFromJwt()):
                     return {'Message': 'Student already registere and linked to you'}, 400
                 
                 return {'Message': 'Student exists already'}, 400
 
             # check if school exists
-            if util.validate_table_integrity(studentData['user_email'], SCHOOL) == False:
+            if util.validate_table_integrity_byEmail(studentData['user_email'], SCHOOL) == False:
                 return {'message': 'School {} does not exist in our world'.format(studentData['user_email'])}, 400
 
             school = school_repo.findByEmail(studentData['user_email'])
@@ -173,7 +182,7 @@ def loginSchool():
     try:
         loginData = login_schema.load(data)
 
-        if util.validate_table_integrity(loginData['email'], SCHOOL) == False:
+        if util.validate_table_integrity_byEmail(loginData['email'], SCHOOL) == False:
             return {'Message': 'Invalid Credentials'}
 
         school = school_repo.findByEmail(loginData['email'])
@@ -208,7 +217,7 @@ def loginGuardian():
     try:
         loginData = login_schema.load(data)
 
-        if util.validate_table_integrity(loginData['email'], GUARDIAN) == False:
+        if util.validate_table_integrity_byEmail(loginData['email'], GUARDIAN) == False:
             return {'Message': 'Invalid Credentials'}
 
         guardian = guardian_repo.findByEmail(loginData['email'])
@@ -246,6 +255,28 @@ def signout():
         util.persistModel(blacklist)
         
         return {'Message': 'Signed out successfully'}, 201
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@user_bp.route('/profile', methods=['POST'])
+@jwt_required(optional=False)
+def update_profile():
+    try:
+        # extracts set data
+        setData = util.extract_set_data_from_schema(profile_update_schema.load(request.get_json()))
+        if not setData:
+            return {'Message': 'Update what?'}, 400
+
+        user = util.getInstanceFromJwt()
+
+        return jsonify(getSchoolResponse(util.update_profile(setData, user))), 200
+
+    except ValidationError as err:
+        return {'message': err.args[0]}, 400
     except TypeError as err:
         return {'Message': err.args[0]}, 400
     except SQLAlchemyError as err:

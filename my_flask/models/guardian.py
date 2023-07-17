@@ -32,6 +32,7 @@ class Guardian(BaseModel, User):
     first_name: Mapped[str] = mapped_column(String(128))
     last_name: Mapped[str] = mapped_column(String(128))
     email: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    phone: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(128), nullable=False)
     gender: Mapped[gender_enum.Gender]
     dob = mapped_column(Date)
