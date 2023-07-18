@@ -5,24 +5,24 @@ from sqlalchemy.exc import SQLAlchemyError
 from utility import util
 from services.note_service import note_service
 from response_object import getStudentResponse, getListOfResponseObjects, getGuardResponse, getRegistryResponse
-from repos.studentRepo import StudentRepo
-from repos.guardRepo import GuardRepo, Guard
-from repos.guardianRepo import GuardianRepo
-from repos.schoolRepo import SchoolRepo, School
-from repos.registryRepo import RegistryRepo, Registry
+from repos.studentRepo import student_repo
+from repos.guardRepo import guard_repo, Guard
+from repos.guardianRepo import guardian_repo
+from repos.schoolRepo import school_repo
+from repos.registryRepo import Registry, registry_repo
 from global_variables import SCHOOL, STUDENT, GUARDIAN, GUARD, REGISTRY, CONFIRMATION
 from Enums.tag_enum import Tag
 from Enums.status_enum import Status
 from Enums.permit_enum import Permit
-from schemas import link_schema, update_schema, update_sc_schema
+from schemas import link_schema, update_schema, update_sc_schema, student_profile_update_schema
 
 
 student_bp = Blueprint('student', __name__)
-student_repo = StudentRepo()
-guard_repo = GuardRepo()
-guardian_repo = GuardianRepo()
-school_repo = SchoolRepo()
-registry_repo = RegistryRepo()
+student_repo = student_repo
+guard_repo = guard_repo
+guardian_repo = guardian_repo
+school_repo = school_repo
+registry_repo = registry_repo
 
 
 @student_bp.route('/get/student/<string:email>', methods=['GET'])
@@ -252,7 +252,7 @@ def backToSchool():
         return {'Message': err.args[0]}, 400
     finally:
         util.closeSession()
-    
+   
 @student_bp.route('/remove/school/<email>', methods=['GET'])
 @jwt_required(optional=False)
 def removeSchool(email):
@@ -315,6 +315,38 @@ def removeSchool(email):
     except SQLAlchemyError as err:
         return {'message': err.args[0]}
     except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    finally:
+        util.closeSession()
+
+@student_bp.route('/update/profile', methods=['POST'])
+@jwt_required(optional=False)
+def student_profile():
+    try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
+        studentData = student_profile_update_schema.load(request.get_json())
+        
+        # checks if student exists
+        if util.validate_table_integrity_byEmail(studentData['student_email'], STUDENT) == False:
+            return {'Message': 'Student does not exist'}, 400
+        
+        student = student_repo.findByEmail(studentData['student_email'])
+        
+        # extract set data
+        setData = util.extract_set_data_from_schema(studentData)
+        if not setData:
+            return {'Message': 'Update what?'}, 400
+
+        return jsonify(getStudentResponse(util.update_student_profile(setData, student))), 200
+
+    except ValidationError as err:
+        return {'message': err.args[0]}, 400
+    except TypeError as err:
+        return {'Message': err.args[0]}, 400
+    except SQLAlchemyError as err:
         return {'Message': err.args[0]}, 400
     finally:
         util.closeSession()

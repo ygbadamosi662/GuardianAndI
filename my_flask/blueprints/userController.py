@@ -22,7 +22,6 @@ from Enums.permit_enum import Permit
 
 
 user_bp = Blueprint('user', __name__)
-jwtPayload = {}
 
 @user_bp.route('/reg/school', methods=['POST'])
 def schoolReg():
@@ -193,10 +192,7 @@ def loginSchool():
         if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), school.password.encode('utf-8')):
             return jsonify({'message': 'Invalid Credentials'}), 401
 
-        jwtPayload['email'] = loginData['email']
-        jwtPayload['model'] = SCHOOL
-
-        jwt = create_access_token(identity=jwtPayload)
+        jwt = create_access_token(identity={'email': loginData['email'], 'model': SCHOOL})
 
         return jsonify({'jwt': jwt}), 201
     
@@ -228,10 +224,7 @@ def loginGuardian():
         if not globalBcrypt.checkpw(loginData['password'].encode('utf-8'), guardian.password.encode('utf-8')):
             return jsonify({'message': 'Invalid Credentials'}), 401
 
-        jwtPayload['email'] = loginData['email']
-        jwtPayload['model'] = GUARDIAN
-
-        jwt = create_access_token(identity=jwtPayload)
+        jwt = create_access_token(identity={'email': loginData['email'], 'model': GUARDIAN})
 
         return jsonify({'jwt': jwt}), 201
     
@@ -266,6 +259,10 @@ def signout():
 @jwt_required(optional=False)
 def update_profile():
     try:
+        # checks if jwt_toke is blacklisted
+        if util.validate_against_jwt_blacklist():
+            return {'Message': 'Your session has expired, login again'}, 400
+        
         # extracts set data
         setData = util.extract_set_data_from_schema(profile_update_schema.load(request.get_json()))
         if not setData:

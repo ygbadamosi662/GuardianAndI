@@ -10,7 +10,7 @@ from repos.guardRepo import guard_repo, Guard
 from models.pick_and_drop import PickAndDrop
 from repos.pick_and_dropRepo import pad_repo
 from repos.registryRepo import Registry
-from repos.jwt_blaclistRepo import Jwt_Blacklist_repo, Jwt_Blacklist
+from repos.jwt_blaclistRepo import Jwt_Blacklist
 from Enums.auth_enum import Auth
 from Enums.action_enum import Action
 from models.student import Student
@@ -352,31 +352,60 @@ class Utility:
     def update_profile(self, set_data: dict, user: User)->Union[School, Guardian]:
         # updates the users profile accordinly, make sure set_data is returned by self.extract_set_data_from_schemas
         # or you have made sure all keys in set_data has a value
-        if set_data:
+        if set_data and user:
             g = ['first_name', 'last_name']
             sch = ['school_name', 'address', 'city']
 
-            if set_data['phone']:
+            if 'phone' in set_data:
                 user.phone = set_data['phone']
 
             if user.__tablename__ == SCHOOL:
                 for field in sch:
-                    if sch[0] == field:
-                        user.school_name = set_data[field]
-                    if sch[1] == field:
-                        user.address = set_data[field]
-                    if sch[2] == field:
-                        user.city = set_data[field]
+                    if field in set_data:
+                        if sch[0] == field:
+                            user.school_name = set_data[field]
+                        if sch[1] == field:
+                            user.address = set_data[field]
+                        if sch[2] == field:
+                            user.city = set_data[field]
 
             if user.__tablename__ == GUARDIAN:
                 for field in sch:
-                    if g[0] == field:
-                        user.first_name = set_data[field]
-                    if sch[1] == field:
-                        user.last_name = set_data[field]
+                    if field in set_data:
+                        if g[0] == field:
+                            user.first_name = set_data[field]
+                        if sch[1] == field:
+                            user.last_name = set_data[field]
 
             self.persistModel(user)
             return user
 
+    def update_student_profile(self, set_data: dict, student: Student) ->Student:
+        # updates the student profile accordinly, make sure set_data is returned by self.extract_set_data_from_schema
+        # or you have made sure all keys in set_data has a value
+        if set_data and student:
+            # sch = ['grade']
+            g = ['first_name', 'last_name', 'gender', 'dob']
+            who = get_jwt_identity()['model']
+
+            if who == SCHOOL:
+                if 'grade' in set_data:
+                    student.grade = set_data['grade']
+
+            if who == GUARDIAN:
+                for field in g:
+                    if field in set_data:
+                        if g[0] == field:
+                            student.first_name = set_data[field]
+                        if g[1] == field:
+                            student.last_name = set_data[field]
+                        if g[2] == field:
+                            student.email = set_data[field]
+                        if g[3] == field:
+                            student.gender = set_data[field]
+
+            self.persistModel(student)
+            return student
+    
 
 util = Utility()

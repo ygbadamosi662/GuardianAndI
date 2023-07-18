@@ -39,7 +39,8 @@ class StudentSchema(Schema):
     email = fields.Email(required=True)
     gender = fields.Enum(Gender)
     grade = fields.String(required=True)
-    dob = fields.Date("iso")
+    dob = fields.Date("iso", required=True)
+    user_email = fields.Email(required=True)
     
 student_schema = StudentSchema()
 
@@ -91,4 +92,13 @@ class ProfileUpdate(Schema):
     phone = fields.String(validate=validate_phone_number)
 
 profile_update_schema = ProfileUpdate()
-    
+
+class StudentProfileUpdate(Schema):
+    student_email = fields.Email(required=True)
+    first_name = fields.String()
+    last_name = fields.String()
+    grade = fields.String()
+    gender = fields.Enum(Gender)
+    dob = fields.Date("iso")
+
+student_profile_update_schema = StudentProfileUpdate()
