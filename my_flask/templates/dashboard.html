@@ -313,15 +313,16 @@
     <script src="../static/js/dashboard2.js"></script>
     <script>
         $(document).ready(function(){ 
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                 window.location.replace("login-page.html");
+            }
             $('#crtrcd').click(function(event){
                 $('#fullscreenModal').modal('show'); 
             });
             $('#signout').click(function(event){
                 event.preventDefault();
                 const token = localStorage.getItem('jwt_token');
-                if (!token) {
-                     window.location.replace("login-page.html");
-                }
                 const fll = "/signout";
                 $.ajax({
                     dataType: 'text',
