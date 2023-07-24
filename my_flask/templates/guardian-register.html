@@ -127,7 +127,7 @@
 
                     success: function(response){
                       if(response!="failed"){
-                        var data = JSON.parse(JSON.stringify(response));
+                        const data = JSON.parse(JSON.stringify(response));
                         $("#reg").html("Registration successful");
                         setTimeout(function() {
                           window.location.replace("login-page.html");
