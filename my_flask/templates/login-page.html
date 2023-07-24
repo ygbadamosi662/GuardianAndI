@@ -114,7 +114,7 @@
 
                     success: function(response){
                       if(response!="failed"){
-                        var data = JSON.parse(JSON.stringify(response));
+                        const data = JSON.parse(JSON.stringify(response));
                         $("#login").html("Login successful");
                         console.log('Logged in successfully!');
                         console.log('Token:', data.jwt);
