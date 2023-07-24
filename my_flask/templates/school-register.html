@@ -45,7 +45,7 @@
                                   ...
                                 </div>
                               </div>
-                            <form>
+                            <form method="post">
                                 <div class="form-group">
                                     <label>Name</label>
                                     <input type="text" class="form-control" id="school_name" placeholder="Name" required>
@@ -64,7 +64,7 @@
                                         <div class="invalid-feedback">Please enter your password!</div>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-flat m-b-30 m-t-30" id="reg">Register</button>
+                                <button type="button" class="btn btn-primary btn-flat m-b-30 m-t-30" id="reg">Register</button>
                                 
                                 <div class="register-link m-t-15 text-center">
                                     <p>Already have account ? <a href="school-login.html"> Sign in</a></p>
@@ -79,6 +79,10 @@
     <script src="../static/js/lib/jquery.min.js"></script>
     <script>
         $(document).ready(function(){
+            $('#chec').click(function(){
+             // alert($(this).is(':checked'));
+              $(this).is(':checked') ? $('#password').attr('type', 'text') : $('#password').attr('type', 'password');
+            });
             $('#reg').click(function(event){
                 const fll = "/reg/school";
                 const school_name = $("#school_name").val(), email = $("#email").val(), 
@@ -120,7 +124,9 @@
                       if(response!="failed"){
                         var data = JSON.parse(JSON.stringify(response));
                         $("#reg").html("Registration successful");
-                        window.location.replace(data.frt);
+                        setTimeout(function() {
+                          window.location.replace("page-login.html");
+                        }, 3000);
                       }else{
                         $("#reg").html("Register");
                       }
