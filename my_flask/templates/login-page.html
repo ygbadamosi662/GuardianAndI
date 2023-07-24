@@ -44,8 +44,8 @@
                             <div class="col-12">
                                 <div class="alert alert-info border-0 alert-dismissible fade hide" id="msg" role="alert" style="background-color: #f82249;">
                                   ...
+                                </div>
                             </div>
-                              </div>
                             <form method="post">
                                
                                 <div class="form-group">
@@ -74,8 +74,6 @@
         </div>
     </div>
     <script src="../static/js/lib/jquery.min.js"></script>
-    <script src="../static/js/lib/jquery.nanoscroller.min.js"></script>
-
     <script>
         $(document).ready(function(){
             $('#chec').click(function(){
@@ -90,7 +88,7 @@
                 if (!filter.test(email)) {
                     $("#email").val("");
                     email.focus;
-                    $('#msg').html('Failed, try with another email');
+                    $('#msg').html('Failed, try again');
                     $("#msg").removeClass("hide");
                     $("#msg").addClass("show");
                     return false;
@@ -108,7 +106,7 @@
                     },
                     // data: $('#contact').serialize(),``
                     beforeSend: function(xhr){
-                      $('#login').html('Creating new profile...');
+                      $('#login').html('Connecting...');
                       $("#msg").removeClass("show");
                       $("#msg").addClass("hide");
                       
@@ -119,11 +117,13 @@
                         var data = JSON.parse(JSON.stringify(response));
                         $("#login").html("Login successful");
                         console.log('Logged in successfully!');
-                        console.log('Token:', data.token);
+                        console.log('Token:', data.jwt);
 
                         // Save the token in localStorage for future requests
-                        localStorage.setItem('jwt_token', data.token);
-
+                        localStorage.setItem('jwt_token', data.jwt);
+                        setTimeout(function() {
+                          window.location.replace("dashboard.html");
+                        }, 3000);
                       }else{
                         $("#login").html("Login");
                       }
