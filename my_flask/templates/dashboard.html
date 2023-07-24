@@ -42,7 +42,7 @@
                     <li><a href="app-event-calender.html"><i class="ti-wheelchair"></i> Pick Up </a></li>
                     <li><a href="app-profile.html"><i class="ti-user"></i> Profile</a></li>
                     
-                    <li><a><i class="ti-power-off"></i> Logout</a></li>
+                    <li><a><i class="ti-power-off" id="logout"></i> Logout</a></li>
                 </ul>
             </div>
         </div>
@@ -312,10 +312,43 @@
     <!-- scripit init-->
     <script src="../static/js/dashboard2.js"></script>
     <script>
-        $(document).ready(function(){
-          $('#crtrcd').click(function(event){
-            $('#fullscreenModal').modal('show'); 
-          });
+        $(document).ready(function(){ 
+            $('#crtrcd').click(function(event){
+                $('#fullscreenModal').modal('show'); 
+            });
+            $('#signout').click(function(event){
+                event.preventDefault();
+                const token = localStorage.getItem('jwt_token');
+                if (!token) {
+                     window.location.replace("login-page.html");
+                }
+                const fll = "/signout";
+                $.ajax({
+                    dataType: 'text',
+                    // url: atob(fll),
+                    url: fll,
+                    type: 'POST',
+                    method: 'POST',
+                    headers: {
+                        Authorization: "Bearer " + token
+                    }
+                    beforeSend: function(xhr){
+                      
+                    },
+                    success: function(response){
+                        if(response!="failed"){
+                            window.location.reload();
+                        }else{window.location.reload();}
+                      
+                    },
+                    error: function(){
+                        window.location.reload()
+                    },
+                    complete: function(){
+                      
+                    }
+                });
+            });
         });
     </script>
 </body>
