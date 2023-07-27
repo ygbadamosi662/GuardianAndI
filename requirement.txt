@@ -1,0 +1,10 @@
+bcrypt==3.2.2
+flask==2.2.2
+flask-jwt-extended==4.4.4
+flask-marshmallow==0.14.0
+marshmallow==3.19.0
+marshmallow-sqlalchemy==0.29.0
+mysql-connector-python==8.0.33
+mysqlclient==2.2.0
+python-dotenv==1.0.0
+sqlalchemy==2.0.17
