@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- theme meta -->
+    <meta name="theme-name" content="focus" />
+    <title>Guardian & I App</title>
+    <!-- ================= Favicon ================== -->
+    <!-- Standard -->
+    <link rel="shortcut icon" href="../static/images/favicon.png">
+    <!-- Retina iPad Touch Icon-->
+    <link rel="apple-touch-icon" sizes="144x144" href="../static/images/favicon.png">
+    <!-- Retina iPhone Touch Icon-->
+    <link rel="apple-touch-icon" sizes="114x114" href="../static/images/favicon.png">
+    <!-- Standard iPad Touch Icon-->
+    <link rel="apple-touch-icon" sizes="72x72" href="../static/images/favicon.png">
+    <!-- Standard iPhone Touch Icon-->
+    <link rel="apple-touch-icon" sizes="57x57" href="../static/images/favicon.png">
+    <!-- Styles -->
+    <link href="../static/styles/lib/font-awesome.min.css" rel="stylesheet">
+    <link href="../static/styles/lib/themify-icons.css" rel="stylesheet">
+    <link href="../static/styles/lib/owl.theme.default.min.css" rel="stylesheet" />
+    <link href="../static/styles/lib/menubar/sidebar.css" rel="stylesheet">
+    <link href="../static/styles/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/styles/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="sidebar sidebar-hide-to-small sidebar-shrink sidebar-gestures">
+        <div class="nano">
+            <div class="nano-content">
+                <ul>
+                    <div class="logo"><a href="index.html">
+                        <img src="../static/images/logo.png" alt="" />
+                    </div>
+                    <li><a class="sidebar-sub-toggle"><i class="ti-home"></i> Dashboard </a></li>
+                    
+                    <li><a href="app-event-calender.html"><i class="ti-wheelchair"></i> Guardian List </a></li>
+                    <li><a href="app-profile.html"><i class="ti-user"></i> Profile</a></li>
+                    
+                    <li><a><i class="ti-power-off"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- /# sidebar -->
+
+    <div class="header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="float-left">
+                        <div class="hamburger sidebar-toggle">
+                            <span class="line"></span>
+                            <span class="line"></span>
+                            <span class="line"></span>
+                        </div>
+                    </div>
+                    <div class="float-right">
+                       
+                        <div class="dropdown dib">
+                            <div class="header-icon" data-toggle="dropdown">
+                                <span class="user-avatar">Admin
+                                    <i class="ti-angle-down f-s-10"></i>
+                                </span>
+                                <div class="drop-down dropdown-profile dropdown-menu dropdown-menu-right">
+                                   
+                                    <div class="dropdown-content-body">
+                                        <ul>
+                                            <li>
+                                                <a href="#">
+                                                    <i class="ti-user"></i>
+                                                    <span>Profile</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="#">
+                                                    <i class="ti-power-off"></i>
+                                                    <span>Logout</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="content-wrap">
+        <div class="main">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12 p-r-0 title-margin-right">
+                        <div class="page-header">
+                            <div class="page-title">
+                                <h1>Hello, <span>Welcome Admin</span></h1>
+                            </div>
+                        </div>
+                    </div>
+                   
+                </div>
+                <!-- /# row -->
+                <section id="main-content">
+                    <div class="modal fade" id="fullscreenModal" tabindex="-1" data-bs-backdrop="false" aria-hidden="true" style="display: none;">
+
+                        <div class="modal-dialog modal-fullscreen">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <button type="button" class="ti-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="row">
+                                <div class="col-lg-12">
+                                  <div class="card">
+                                    <div class="card-body">
+                                      <h5 class="card-title">Tip</h5>
+                                      <p id="phint">Here you can delete a student profile.</p>
+                                      <a href="" class="btn btn-primary">Create New Student Profile</a><br>
+                                      <!-- Floating Labels Form -->
+                                      <div class="table-responsive-md" id="seres">
+                                        <table class="table table-striped">
+                                          <thead class="">
+                                            <tr>
+                                              <th scope="col">
+                                                Student
+                                              </th>
+                                              <th scope="col">
+                                                Assigned Guardian(s)
+                                              </th>
+                                             
+                                            </tr>
+                                                                
+                                          </thead>
+                                          <tbody>
+                                            <tr>
+                                              
+                                              <td><span id="iue">Affion Urdu</span><br><span id="iue">Grade 3</span><br>
+                                                <span id="iue">help@email.com</span><br>
+                                                <span id="iue">Male</span><br>
+                                                <span id="iue">12/04/1983</span><br>
+                                                <form role="form" method="post" action="#">
+                                                  <div class="form-group">
+                                                    <input type="hidden" class="form-control" name="cfn"  id="cfn" required>
+                                                    <input type="hidden" class="form-control" name="myi"  id="myi" required>
+                                                  </div>
+                                                  <div class="form-group">
+                                                    <input type="submit" name="vied" value="Delete Student" class="btn btn-primary" >
+                                                    <button type="submit" name="delrec" class="btn"><i class="mdi mdi-delete-forever"></i></button>
+                                                    <!-- <input type="submit" name="cdel" value="Delete" class="btn btn-danger" > -->
+                                                  </div>
+                                                </form>
+                                              </td>
+                                              
+                                              <td id="mailc">
+                                                <span id="iue">Andreas Perez</span><br>
+                                                <span id="iue">help@now.it</span>
+                                              </td>
+                                              
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                     
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                           
+                          </div>
+                        </div>
+                      </div>
+                      
+                    <!-- /# row -->
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card p-0">
+                                <div class="stat-widget-three home-widget-three">
+                                    <div class="stat-icon bg-facebook">
+                                        <i class="ti-user color-pink border-pink"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-digit">8,268</div>
+                                        <div class="stat-text">Total Students</div><br>
+                                        <button type="button" class="btn btn-success btn-outline btn-rounded m-b-10 m-l-5" id="crtrcd">View All</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card p-0">
+                                <div class="stat-widget-three home-widget-three">
+                                    <div class="stat-icon bg-youtube">
+                                        <i class="ti-link"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-digit">12,545</div>
+                                        <div class="stat-text">Total Guardians</div><br>
+                                        <button type="button" class="btn btn-success btn-outline btn-rounded m-b-10 m-l-5" id="vwgcd">View All</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                    </div>
+                    
+                    <br><br><br><br>
+                </section>
+                <!-- Footer -->
+                <footer class="footer fixed-bottom mt-auto"style="background:white;margin-left: 0px;margin-bottom: 0px;">
+                  <br>
+                  <ul class="nav nav-tabs nav-tabs-bordered d-flex" id="borderedTabJustified" role="tablist" >
+                    <li class="nav-item flex-fill" role="presentation" >
+                      <a href="hanilet.php" class=" d-flex align-items-center justify-content-center"><img src="../static/images/favicon.png" width="30" height="30"></a>
+                      <button class="nav-link w-100 " id="home-tab" data-bs-toggle="tab" data-bs-target="#bordered-justified-home" type="button" role="tab" aria-controls="home" aria-selected="false" style="border-bottom-color:blue;background: white;"><a href="hanilet.php">Home</a></button>
+                    </li>
+                    <li class="nav-item flex-fill " role="presentation" >
+                      <a href="use_list.php" class=" d-flex align-items-center justify-content-center "><i class="ti-wheelchair color-pink border-pink" style="font-size:30px;"></i></a>
+                      <button class="nav-link w-100" id="contact-tab" data-bs-toggle="tab" data-bs-target="#bordered-justified-contact" type="button" role="tab" aria-controls="contact" aria-selected="false" style="background:white;"><a href="use_list.php">Create Link</a></button>
+                    </li>
+                    <li class="nav-item flex-fill" role="presentation" >
+                      <a href="profile.php" class=" d-flex align-items-center justify-content-center"><i class="ti-user color-primary border-primary" style="font-size:30px;"></i></a>
+                      <button class="nav-link w-100 " id="contact-tab" data-bs-toggle="tab" data-bs-target="#bordered-justified-contact" type="button" role="tab" aria-controls="contact" aria-selected="true" style="background:white;"><a href="profile.php">Profile</a></button>
+                    </li>
+                  </ul>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- jquery vendor -->
+    <script src="../static/js/lib/jquery.min.js"></script>
+    <script src="../static/js/lib/jquery.nanoscroller.min.js"></script>
+    <!-- nano scroller -->
+    <script src="../static/js/lib/menubar/sidebar.js"></script>
+    <script src="../static/js/lib/preloader/pace.min.js"></script>
+    <!-- sidebar -->
+
+    <script src="../static/js/lib/bootstrap.min.js"></script>
+    <script src="../static/js/scripts.js"></script>
+    <!-- bootstrap -->
+
+
+
+    <script src="../static/js/lib/circle-progress/circle-progress.min.js"></script>
+    <script src="../static/js/lib/circle-progress/circle-progress-init.js"></script>
+    <script src="../static/js/lib/sparklinechart/jquery.sparkline.min.js"></script>
+    <script src="../static/js/lib/sparklinechart/sparkline.init.js"></script>
+    <!-- scripit init-->
+    <script src="../static/js/dashboard2.js"></script>
+    <script>
+        $(document).ready(function(){
+          $('#crtrcd').click(function(event){
+            $('#fullscreenModal').modal('show'); 
+          });
+        });
+    </script>
+</body>
+
+</html>

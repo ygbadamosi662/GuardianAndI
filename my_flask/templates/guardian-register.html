@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Guardian & I</title>
+
+    <!-- ================= Favicon ================== -->
+    <!-- Standard -->
+    <link rel="shortcut icon" href="./static/images/favicon.png">
+    <!-- Retina iPad Touch Icon-->
+    <link rel="apple-touch-icon" sizes="144x144" href="./static/images/favicon.png">
+    <!-- Retina iPhone Touch Icon-->
+    <link rel="apple-touch-icon" sizes="114x114" href="./static/images/favicon.png">
+    <!-- Standard iPad Touch Icon-->
+    <link rel="apple-touch-icon" sizes="72x72" href="./static/images/favicon.png">
+    <!-- Standard iPhone Touch Icon-->
+    <link rel="apple-touch-icon" sizes="57x57" href="http://placehold.it/57.png/000/fff">
+
+    <!-- Styles -->
+    <link href="../static/styles/lib/font-awesome.min.css" rel="stylesheet">
+    <link href="../static/styles/lib/themify-icons.css" rel="stylesheet">
+    <link href="../static/styles/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/styles/lib/helper.css" rel="stylesheet">
+    <link href="../static/styles/style.css" rel="stylesheet">
+</head>
+
+<body class="bg-primary">
+
+    <div class="unix-login">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="login-content">
+                        <div class="login-logo">
+                            <img src="../static/images/logo.png">
+                        </div>
+                        <div class="login-form">
+                            <h4>Guardian Registrar</h4>
+                            <div class="col-12">
+                                <div class="alert alert-info border-0 alert-dismissible fade hide" id="msg" role="alert" style="background-color: #f82249;">
+                                  ...
+                                </div>
+                            </div>
+                            <form method="post">
+                                <div class="form-group">
+                                    <label>First Name</label>
+                                    <input type="text" class="form-control" id="first_name" placeholder="First Name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" placeholder="Last Name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email address</label>
+                                    <input type="email" class="form-control" id="email" placeholder="Email">
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <div class="input-group">
+                                      <span class="input-group-text" id="inputGroupPrepend">
+                                        <input type='checkbox' id='chec' class="ri-eye-close-line" />
+                                      </span>
+                                        <input type="password" name="password" class="form-control" id="password" required>
+                                        <div class="invalid-feedback">Please enter your password!</div>
+                                    </div>
+                                </div>
+                                <button type="button" id="reg" class="btn btn-primary btn-flat m-b-30 m-t-30">Register</button>
+                               
+                                <div class="register-link m-t-15 text-center">
+                                    <p>Already have account ? <a href="#"> Sign in</a></p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../static/js/lib/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#chec').click(function(){
+             // alert($(this).is(':checked'));
+              $(this).is(':checked') ? $('#password').attr('type', 'text') : $('#password').attr('type', 'password');
+            });
+            $('#reg').click(function(event){
+                const fll = "/reg/guardian";
+                const first_name = $("#first_name").val(), last_name = $("#last_name").val(), email = $("#email").val(), 
+                password = $("#password").val(), gender = "", dob = "", phone = "";
+                event.preventDefault();
+                const filter = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+                if (!filter.test(email)) {
+                    $("#email").val("");
+                    email.focus;
+                    $('#msg').html('Failed, try with another email');
+                    $("#msg").removeClass("hide");
+                    $("#msg").addClass("show");
+                    return false;
+                }
+                ///////////new injection////////////////
+                $.ajax({
+                    dataType: 'JSON',
+                    // url: atob(fll),
+                    url: fll,
+                    type: 'POST',
+                    method: 'POST',
+                    data:{
+                      first_name:first_name,
+                      last_name:last_name,
+                      email:email,
+                      password:password,
+                      gender:gender,
+                      dob:dob,
+                      phone:phone,
+                    },
+                    // data: $('#contact').serialize(),
+                    beforeSend: function(xhr){
+                      $('#reg').html('Creating new profile...');
+                      $("#msg").removeClass("show");
+                      $("#msg").addClass("hide");
+                      
+                    },
+
+                    success: function(response){
+                      if(response!="failed"){
+                        const data = JSON.parse(JSON.stringify(response));
+                        $("#reg").html("Registration successful");
+                        setTimeout(function() {
+                          window.location.replace("login-page.html");
+                        }, 3000);
+                      }else{
+                        $("#reg").html("Register");
+                      }
+                    },
+                    error: function(){
+                      $("#email").val("");
+                      $("#email").focus;
+                      $('#msg').html('Already registered');
+                      $("#msg").removeClass("hide");
+                      $("#msg").addClass("show");
+                      $('#reg').html('Register');
+                    },
+                    complete: function(response){
+                      
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
