@@ -9,16 +9,20 @@ from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager
 from config import Config
 from models import storage
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+from models.user_admin import UserAdmin
 # from models.student import Student
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-
-
 jwt_manager = JWTManager(app)
 ma = Marshmallow(app)
+
+admin = Admin(app, name='Admin', template_mode='bootstrap3')
+admin.add_view(ModelView(UserAdmin, storage.get_session()))
 
 path_prefix = '/api/v1'
 
