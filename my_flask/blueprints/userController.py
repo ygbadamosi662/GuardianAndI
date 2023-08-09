@@ -71,7 +71,6 @@ def guardianReg():
         guardian = Guardian(first_name=guardianData['first_name'], last_name=guardianData['last_name'], email=guardianData['email'], password=guardianData['password'], gender=guardianData['gender'], dob=guardianData['dob'], phone=guardianData['phone'])
         
         util.persistModel(guardian)
-        util.closeSession()
 
         return jsonify(guardian_schema.dump(guardianData)), 200
     

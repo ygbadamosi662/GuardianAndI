@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 """Defines the Student class."""
-from models.base_model import BaseModel, Base
-from typing import List
+from models.base_model import BaseModel
 from models.subjectBase import Subject
-from sqlalchemy import Column, Enum, Date
+from sqlalchemy import Date
 from sqlalchemy import String
-from sqlalchemy import Integer
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from Enums import gender_enum

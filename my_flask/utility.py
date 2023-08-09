@@ -53,7 +53,8 @@ class Utility:
     
     def persistModel(self, model):
         self.discard()
-        storage.new(model)
+        if not model.id:
+            storage.new(model)
         storage.save()
 
     def isGuardian(self, student: Student, guardian: Guardian, andIsSuper=False, andIsActive=False) -> bool:
